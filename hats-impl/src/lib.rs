@@ -67,6 +67,20 @@ fn write_field(field: &syn::Field) -> Tokens {
 }
 
 fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) -> Tokens {
+    let inner_ty = if let syn::Ty::Path(_, ref path) = field.ty {
+        let segment = &path.segments[0];
+        if segment.ident.as_ref() == "Option" {
+            if let syn::PathParameters::AngleBracketed(ref parameters) = segment.parameters {
+                Some(&parameters.types[0])
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
     let str_type = syn::parse_type(quote! { Option<&#lifetime str> }.as_str()).unwrap();
     let vec_str_type = syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
     let scope = config.scope.unwrap_or("");
@@ -96,6 +110,28 @@ fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) ->
             ::syn::MetaItem::Word(ref ident)
                 if ident.as_ref() == #ident_str => {
                     #ident = true;
+                }
+        }
+    } else if field.ty == syn::parse_type("Option<char>").unwrap() {
+        quote! {
+            ::syn::MetaItem::NameValue(ref ident, ref value)
+                if ident.as_ref() == #ident_str => {
+                    match *value {
+                        ::syn::Lit::Str(ref value, _) => {
+                            if value.len() != 1 {
+                                panic!(
+                                    "Parsing attribute value {:?} for {}({}) failed: {}",
+                                    value, #scope, ident.as_ref(),
+                                    "expected one character");
+                            }
+                            #ident = Some(value[0]);
+                        }
+                        _ => {
+                            panic!(
+                                "Unexpected attribute literal value {:?} for {}({}), expected {}",
+                                value, #scope, ident.as_ref(), "bool")
+                        }
+                    }
                 }
         }
     } else if field.ty == str_type {
@@ -134,13 +170,13 @@ fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) ->
         quote! {
             ::syn::MetaItem::NameValue(ref ident, ref value)
                 if ident.as_ref() == #ident_str => {
-                    #ident = match *value {
+                    match *value {
                         ::syn::Lit::Str(ref value, _) => {
-                            Some(value.parse().unwrap_or_else(|err| {
+                            #ident = Some(<#inner_ty as FromStr>::from_str(value).unwrap_or_else(|err| {
                                 panic!(
                                     "Parsing attribute value {:?} for {}({}) failed: {}",
                                     value, #scope, ident.as_ref(), err)
-                            }))
+                            }));
                         }
                         _ => {
                             panic!(
