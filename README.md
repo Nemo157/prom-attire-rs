@@ -30,7 +30,8 @@ configuration.
 Finally `hats` defines a slightly more complicated procedural derive macro
 (`FromAttributes`) that parses some attributes (using a parser derived with
 `FromAttributesBootstrap`), then calls into `hats-impl` with a configuration
-derived from those parsed attributes.
+derived from those parsed attributes. This is the "public" entrypoint to the
+crates, technically the others could be used but they're unlikely to be useful.
 
 So, in the end `hats` is a crate defining a procedural derive macro, to help
 developers write procedural derive macros, that uses a procedural derive in its
