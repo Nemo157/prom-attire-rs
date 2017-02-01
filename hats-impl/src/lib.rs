@@ -124,7 +124,7 @@ fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) ->
                                     value, #scope, ident.as_ref(),
                                     "expected one character");
                             }
-                            #ident = Some(value[0]);
+                            #ident = Some(value.chars().next().unwrap());
                         }
                         _ => {
                             panic!(
