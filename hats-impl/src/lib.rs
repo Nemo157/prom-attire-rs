@@ -43,6 +43,9 @@ fn setup_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Tokens {
             assert!(!path.global);
             assert!(path.segments.len() == 1);
             match path.segments[0].ident.as_ref() {
+                "Vec" => quote! {
+                    let mut #ident = Vec::new();
+                },
                 "Option" => quote! {
                     let mut #ident = None;
                 },
@@ -65,6 +68,7 @@ fn write_field(field: &syn::Field) -> Tokens {
 
 fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) -> Tokens {
     let str_type = syn::parse_type(quote! { Option<&#lifetime str> }.as_str()).unwrap();
+    let vec_str_type = syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
     let scope = config.scope.unwrap_or("");
     let ident = field.ident.as_ref().unwrap();
     let ident_str = ident.as_ref();
@@ -98,9 +102,25 @@ fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) ->
         quote! {
             ::syn::MetaItem::NameValue(ref ident, ref value)
                 if ident.as_ref() == #ident_str => {
-                    #ident = match *value {
+                    match *value {
                         ::syn::Lit::Str(ref value, _) => {
-                            Some(value.as_ref())
+                            #ident = Some(value.as_ref())
+                        }
+                        _ => {
+                            panic!(
+                                "Unexpected attribute literal value {:?} for {}({}), expected {}",
+                                value, #scope, ident.as_ref(), "bool")
+                        }
+                    }
+                }
+        }
+    } else if field.ty == vec_str_type {
+        quote! {
+            ::syn::MetaItem::NameValue(ref ident, ref value)
+                if ident.as_ref() == #ident_str => {
+                    match *value {
+                        ::syn::Lit::Str(ref value, _) => {
+                            #ident.push(value.as_ref());
                         }
                         _ => {
                             panic!(
