@@ -172,7 +172,7 @@ fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) ->
                 if ident.as_ref() == #ident_str => {
                     match *value {
                         ::syn::Lit::Str(ref value, _) => {
-                            #ident = Some(<#inner_ty as FromStr>::from_str(value).unwrap_or_else(|err| {
+                            #ident = Some(<#inner_ty as ::std::str::FromStr>::from_str(value).unwrap_or_else(|err| {
                                 panic!(
                                     "Parsing attribute value {:?} for {}({}) failed: {}",
                                     value, #scope, ident.as_ref(), err)
