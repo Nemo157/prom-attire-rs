@@ -1,0 +1,11 @@
+[package]
+name = "hats-bootstrap"
+version = "0.1.0"
+authors = ["Wim Looman <wim@nemo157.com>"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "0.11.4"
+hats-impl = { path = "../hats-impl" }
