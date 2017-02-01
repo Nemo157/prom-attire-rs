@@ -67,6 +67,11 @@ fn write_field(field: &syn::Field) -> Tokens {
 }
 
 fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) -> Tokens {
+    let ident = field.ident.as_ref().unwrap();
+    if ident.as_ref() == "docs" {
+        return quote!();
+    }
+    let ident_str = ident.as_ref();
     let inner_ty = if let syn::Ty::Path(_, ref path) = field.ty {
         let segment = &path.segments[0];
         if segment.ident.as_ref() == "Option" {
@@ -84,8 +89,6 @@ fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) ->
     let str_type = syn::parse_type(quote! { Option<&#lifetime str> }.as_str()).unwrap();
     let vec_str_type = syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
     let scope = config.scope.unwrap_or("");
-    let ident = field.ident.as_ref().unwrap();
-    let ident_str = ident.as_ref();
     if field.ty == syn::parse_type("bool").unwrap() {
         quote! {
             ::syn::MetaItem::NameValue(ref ident, ref value)
