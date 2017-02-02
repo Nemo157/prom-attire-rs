@@ -202,7 +202,7 @@ fn match_loop<I: Iterator<Item=Tokens>>(matches: I, config: &Config) -> Tokens {
     } else {
         quote! {
             for attr in attrs {
-                match *attr {
+                match attr.value {
                     #(#matches)*
                     ref item => {
                         panic!("Unexpected attribute {:?}", item);
