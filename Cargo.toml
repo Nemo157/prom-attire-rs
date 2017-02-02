@@ -13,3 +13,6 @@ members = ["hats-bootstrap", "hats-impl"]
 syn = "0.11.4"
 hats-bootstrap = { path = "hats-bootstrap" }
 hats-impl = { path = "hats-impl" }
+
+[dev_dependencies]
+quote = "0.3.12"
