@@ -1,14 +1,14 @@
 use syn::{ self, DeriveInput };
 use quote::Tokens;
 
-use Config;
+use { Config, Result };
 
-fn docs_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Tokens {
+fn docs_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Result<Tokens> {
     let expected_type = syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
     if field.ty != expected_type {
-        panic!("bad doc type");
+        return Err("bad doc type".into());
     }
-    quote! {
+    Ok(quote! {
         let docs = attrs.iter()
             .filter(|a| a.is_sugared_doc)
             .map(|a| match a.value {
@@ -17,15 +17,15 @@ fn docs_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Tokens {
             })
             .map(|line| line.trim_left_matches('/').trim())
             .collect();
-    }
+    })
 }
 
-fn setup_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Tokens {
+fn setup_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Result<Tokens> {
     let ident = field.ident.as_ref().unwrap();
     if ident.as_ref() == "docs" {
         return docs_field(field, lifetime);
     }
-    match field.ty {
+    Ok(match field.ty {
         syn::Ty::Path(None, ref path) => {
             assert!(!path.global);
             assert!(path.segments.len() == 1);
@@ -39,11 +39,11 @@ fn setup_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Tokens {
                 "bool" => quote! {
                     let mut #ident = false;
                 },
-                _ => panic!("bad type"),
+                _ => return Err("bad type".into()),
             }
         }
-        _ => panic!("bad type"),
-    }
+        _ => return Err("bad type".into()),
+    })
 }
 
 fn write_field(field: &syn::Field) -> Tokens {
@@ -213,7 +213,7 @@ fn match_loop<I: Iterator<Item=Tokens>>(matches: I, config: &Config) -> Tokens {
     }
 }
 
-pub fn expand(ast: &DeriveInput, config: &Config) -> Tokens {
+pub fn expand(ast: &DeriveInput, config: &Config) -> Result<Tokens> {
     let fields = match ast.body {
         syn::Body::Struct(syn::VariantData::Struct(ref fields)) => fields,
         _ => panic!("bad body"),
@@ -223,11 +223,11 @@ pub fn expand(ast: &DeriveInput, config: &Config) -> Tokens {
     assert!(ast.generics.ty_params.is_empty());
     let lifetime = &ast.generics.lifetimes[0].lifetime;
     let ident = &ast.ident;
-    let setup_fields = fields.iter().map(|field| setup_field(field, lifetime));
+    let setup_fields = fields.iter().map(|field| setup_field(field, lifetime)).collect::<Result<Vec<Tokens>>>()?;
     let field_matches = fields.iter().map(|field| match_field(field, config, lifetime));
     let match_loop = match_loop(field_matches, config);
     let write_fields = fields.iter().map(write_field);
-    quote! {
+    Ok(quote! {
         impl<'a> From<&'a [::syn::Attribute]> for #ident<'a> {
             fn from(attrs: &[::syn::Attribute]) -> #ident {
                 #(#setup_fields)*
@@ -237,5 +237,5 @@ pub fn expand(ast: &DeriveInput, config: &Config) -> Tokens {
                 }
             }
         }
-    }
+    })
 }

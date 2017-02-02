@@ -21,5 +21,5 @@ pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         scope: attrs.scope
     };
 
-    hats_impl::derive(&input, config).parse().unwrap()
+    hats_impl::derive(&input, config).unwrap().parse().unwrap()
 }

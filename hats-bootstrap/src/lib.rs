@@ -8,5 +8,5 @@ pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let config = hats_impl::Config {
         scope: Some("hats"),
     };
-    hats_impl::derive(&input.to_string(), config).parse().unwrap()
+    hats_impl::derive(&input.to_string(), config).unwrap().parse().unwrap()
 }
