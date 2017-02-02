@@ -6,6 +6,7 @@ extern crate syn;
 #[macro_use]
 extern crate quote;
 
+mod dissect;
 mod expand;
 mod errors;
 
@@ -17,5 +18,7 @@ pub struct Config<'a> {
 
 pub fn derive(input: &str, config: Config) -> Result<String> {
     let ast = syn::parse_derive_input(input)?;
-    Ok(expand::expand(&ast, &config)?.to_string())
+    let strukt = dissect::dissect(&ast, &config)?;
+    let expanded = expand::expand(&strukt, &config)?;
+    Ok(expanded.to_string())
 }

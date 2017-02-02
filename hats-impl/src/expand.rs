@@ -1,6 +1,7 @@
-use syn::{ self, DeriveInput };
+use syn;
 use quote::Tokens;
 
+use dissect::{ Struct, Field };
 use { Config, Result };
 
 fn docs_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Result<Tokens> {
@@ -213,20 +214,13 @@ fn match_loop<I: Iterator<Item=Tokens>>(matches: I, config: &Config) -> Tokens {
     }
 }
 
-pub fn expand(ast: &DeriveInput, config: &Config) -> Result<Tokens> {
-    let fields = match ast.body {
-        syn::Body::Struct(syn::VariantData::Struct(ref fields)) => fields,
-        _ => panic!("bad body"),
-    };
-    assert!(ast.generics.lifetimes.len() == 1);
-    assert!(ast.generics.lifetimes[0].bounds.is_empty());
-    assert!(ast.generics.ty_params.is_empty());
-    let lifetime = &ast.generics.lifetimes[0].lifetime;
-    let ident = &ast.ident;
-    let setup_fields = fields.iter().map(|field| setup_field(field, lifetime)).collect::<Result<Vec<Tokens>>>()?;
-    let field_matches = fields.iter().map(|field| match_field(field, config, lifetime));
+pub fn expand(strukt: &Struct, config: &Config) -> Result<Tokens> {
+    let lifetime = &strukt.lifetime.unwrap();
+    let ident = &strukt.ast.ident;
+    let setup_fields = strukt.fields.iter().map(|field| setup_field(field.field, lifetime)).collect::<Result<Vec<Tokens>>>()?;
+    let field_matches = strukt.fields.iter().map(|field| match_field(field.field, config, lifetime));
     let match_loop = match_loop(field_matches, config);
-    let write_fields = fields.iter().map(write_field);
+    let write_fields = strukt.fields.iter().map(|field| write_field(field.field));
     Ok(quote! {
         impl<'a> From<&'a [::syn::Attribute]> for #ident<'a> {
             fn from(attrs: &[::syn::Attribute]) -> #ident {
