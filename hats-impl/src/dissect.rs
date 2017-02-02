@@ -1,15 +1,9 @@
 //! Takes an input struct and extracts all the details necessary to generate
 //! the From<&[Attribute]> implementation
 
-use syn::{
-    self,
-    DeriveInput,
-    Body,
-    VariantData,
-    Lifetime,
-};
+use syn::{self, DeriveInput, Body, VariantData, Lifetime};
 
-use { Config, ErrorKind, Result };
+use {Config, ErrorKind, Result};
 
 pub struct Struct<'a> {
     pub ast: &'a DeriveInput,
@@ -21,9 +15,10 @@ pub struct Field<'a> {
     pub field: &'a syn::Field,
 }
 
-pub fn dissect<'a>(ast: &'a DeriveInput, config: &'a Config<'a>)
-    -> Result<Struct<'a>>
-{
+pub fn dissect<'a>(
+    ast: &'a DeriveInput,
+    config: &'a Config<'a>
+) -> Result<Struct<'a>> {
     let fields = match ast.body {
         Body::Struct(VariantData::Struct(ref fields)) => fields,
         _ => bail!(ErrorKind::StructBody),
@@ -38,8 +33,8 @@ pub fn dissect<'a>(ast: &'a DeriveInput, config: &'a Config<'a>)
     Ok(Struct {
         ast: ast,
         lifetime: ast.generics.lifetimes.iter().next().map(|l| &l.lifetime),
-        fields: fields.iter().map(|field| Field {
-            field: field,
-        }).collect()
+        fields: fields.iter()
+            .map(|field| Field { field: field })
+            .collect(),
     })
 }

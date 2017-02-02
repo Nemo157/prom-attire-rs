@@ -4,16 +4,19 @@ extern crate hats;
 extern crate quote;
 extern crate syn;
 
-use std::net::{ IpAddr, Ipv4Addr };
+use std::net::{IpAddr, Ipv4Addr};
 
 #[test]
 fn parse_string() {
     #[derive(FromAttributes)]
-    struct A<'a> { b: Option<&'a str> }
-    let ast = syn::parse_derive_input(quote! {
+    struct A<'a> {
+        b: Option<&'a str>,
+    }
+    let input = quote! {
         #[b = "test"]
         struct C {}
-    }.as_str()).unwrap();
+    };
+    let ast = syn::parse_derive_input(input.as_str()).unwrap();
     let attrs = A::from(ast.attrs.as_slice());
     assert_eq!(attrs.b, Some("test"));
 }
@@ -21,11 +24,14 @@ fn parse_string() {
 #[test]
 fn parse_byte_str() {
     #[derive(FromAttributes)]
-    struct A<'a> { b: Option<&'a [u8]> }
-    let ast = syn::parse_derive_input(quote! {
+    struct A<'a> {
+        b: Option<&'a [u8]>,
+    }
+    let input = quote! {
         #[b = "test"]
         struct C {}
-    }.as_str()).unwrap();
+    };
+    let ast = syn::parse_derive_input(input.as_str()).unwrap();
     let attrs = A::from(ast.attrs.as_slice());
     assert_eq!(attrs.b, Some(b"test"));
 }
@@ -33,11 +39,14 @@ fn parse_byte_str() {
 #[test]
 fn parse_char() {
     #[derive(FromAttributes)]
-    struct A { b: Option<char> }
-    let ast = syn::parse_derive_input(quote! {
+    struct A {
+        b: Option<char>,
+    }
+    let input = quote! {
         #[b = "b"]
         struct C {}
-    }.as_str()).unwrap();
+    };
+    let ast = syn::parse_derive_input(input.as_str()).unwrap();
     let attrs = A::from(ast.attrs.as_slice());
     assert_eq!(attrs.b, Some('b'));
 }
@@ -45,11 +54,14 @@ fn parse_char() {
 #[test]
 fn parse_u32() {
     #[derive(FromAttributes)]
-    struct A { b: Option<u32> }
-    let ast = syn::parse_derive_input(quote! {
+    struct A {
+        b: Option<u32>,
+    }
+    let input = quote! {
         #[b = "10"]
         struct C {}
-    }.as_str()).unwrap();
+    };
+    let ast = syn::parse_derive_input(input.as_str()).unwrap();
     let attrs = A::from(ast.attrs.as_slice());
     assert_eq!(attrs.b, Some(10));
 }
@@ -57,11 +69,14 @@ fn parse_u32() {
 #[test]
 fn parse_u64() {
     #[derive(FromAttributes)]
-    struct A { b: Option<u64> }
-    let ast = syn::parse_derive_input(quote! {
+    struct A {
+        b: Option<u64>,
+    }
+    let input = quote! {
         #[b = "10"]
         struct C {}
-    }.as_str()).unwrap();
+    };
+    let ast = syn::parse_derive_input(input.as_str()).unwrap();
     let attrs = A::from(ast.attrs.as_slice());
     assert_eq!(attrs.b, Some(10));
 }
@@ -69,11 +84,14 @@ fn parse_u64() {
 #[test]
 fn parse_float() {
     #[derive(FromAttributes)]
-    struct A { b: Option<f64> }
-    let ast = syn::parse_derive_input(quote! {
+    struct A {
+        b: Option<f64>,
+    }
+    let input = quote! {
         #[b = "10.01"]
         struct C {}
-    }.as_str()).unwrap();
+    };
+    let ast = syn::parse_derive_input(input.as_str()).unwrap();
     let attrs = A::from(ast.attrs.as_slice());
     assert_eq!(attrs.b, Some(10.01));
 }
@@ -81,11 +99,14 @@ fn parse_float() {
 #[test]
 fn parse_bool() {
     #[derive(FromAttributes)]
-    struct A { b: Option<bool> }
-    let ast = syn::parse_derive_input(quote! {
+    struct A {
+        b: Option<bool>,
+    }
+    let input = quote! {
         #[b = "true"]
         struct C {}
-    }.as_str()).unwrap();
+    };
+    let ast = syn::parse_derive_input(input.as_str()).unwrap();
     let attrs = A::from(ast.attrs.as_slice());
     assert_eq!(attrs.b, Some(true));
 }
@@ -93,11 +114,14 @@ fn parse_bool() {
 #[test]
 fn parse_from_str() {
     #[derive(FromAttributes)]
-    struct A { b: Option<IpAddr> }
-    let ast = syn::parse_derive_input(quote! {
+    struct A {
+        b: Option<IpAddr>,
+    }
+    let input = quote! {
         #[b = "127.0.0.1"]
         struct C {}
-    }.as_str()).unwrap();
+    };
+    let ast = syn::parse_derive_input(input.as_str()).unwrap();
     let attrs = A::from(ast.attrs.as_slice());
     assert_eq!(attrs.b, Some(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))));
 }

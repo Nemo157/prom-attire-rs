@@ -1,11 +1,12 @@
 use syn;
 use quote::Tokens;
 
-use dissect::{ Struct, Field };
-use { Config, Result };
+use dissect::{Struct, Field};
+use {Config, Result};
 
 fn docs_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Result<Tokens> {
-    let expected_type = syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
+    let expected_type =
+        syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
     if field.ty != expected_type {
         return Err("bad doc type".into());
     }
@@ -21,7 +22,10 @@ fn docs_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Result<Tokens> {
     })
 }
 
-fn setup_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Result<Tokens> {
+fn setup_field(
+    field: &syn::Field,
+    lifetime: &syn::Lifetime
+) -> Result<Tokens> {
     let ident = field.ident.as_ref().unwrap();
     if ident.as_ref() == "docs" {
         return docs_field(field, lifetime);
@@ -31,15 +35,21 @@ fn setup_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Result<Tokens> {
             assert!(!path.global);
             assert!(path.segments.len() == 1);
             match path.segments[0].ident.as_ref() {
-                "Vec" => quote! {
-                    let mut #ident = Vec::new();
-                },
-                "Option" => quote! {
-                    let mut #ident = None;
-                },
-                "bool" => quote! {
-                    let mut #ident = false;
-                },
+                "Vec" => {
+                    quote! {
+                        let mut #ident = Vec::new();
+                    }
+                }
+                "Option" => {
+                    quote! {
+                        let mut #ident = None;
+                    }
+                }
+                "bool" => {
+                    quote! {
+                        let mut #ident = false;
+                    }
+                }
                 _ => return Err("bad type".into()),
             }
         }
@@ -54,7 +64,11 @@ fn write_field(field: &syn::Field) -> Tokens {
     }
 }
 
-fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) -> Tokens {
+fn match_field(
+    field: &syn::Field,
+    config: &Config,
+    lifetime: &syn::Lifetime
+) -> Tokens {
     let ident = field.ident.as_ref().unwrap();
     if ident.as_ref() == "docs" {
         return quote!();
@@ -63,7 +77,8 @@ fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) ->
     let inner_ty = if let syn::Ty::Path(_, ref path) = field.ty {
         let segment = &path.segments[0];
         if segment.ident.as_ref() == "Option" {
-            if let syn::PathParameters::AngleBracketed(ref parameters) = segment.parameters {
+            if let syn::PathParameters::AngleBracketed(ref parameters) =
+                segment.parameters {
                 Some(&parameters.types[0])
             } else {
                 None
@@ -74,8 +89,10 @@ fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) ->
     } else {
         None
     };
-    let str_type = syn::parse_type(quote! { Option<&#lifetime str> }.as_str()).unwrap();
-    let vec_str_type = syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
+    let str_type = syn::parse_type(quote! { Option<&#lifetime str> }.as_str())
+        .unwrap();
+    let vec_str_type =
+        syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
     let scope = config.scope.unwrap_or("");
     if field.ty == syn::parse_type("bool").unwrap() {
         quote! {
@@ -180,7 +197,10 @@ fn match_field(field: &syn::Field, config: &Config, lifetime: &syn::Lifetime) ->
     }
 }
 
-fn match_loop<I: Iterator<Item=Tokens>>(matches: I, config: &Config) -> Tokens {
+fn match_loop<I: Iterator<Item = Tokens>>(
+    matches: I,
+    config: &Config
+) -> Tokens {
     if let Some(scope) = config.scope {
         quote! {
             for attr in attrs {
@@ -217,10 +237,16 @@ fn match_loop<I: Iterator<Item=Tokens>>(matches: I, config: &Config) -> Tokens {
 pub fn expand(strukt: &Struct, config: &Config) -> Result<Tokens> {
     let lifetime = &strukt.lifetime.unwrap();
     let ident = &strukt.ast.ident;
-    let setup_fields = strukt.fields.iter().map(|field| setup_field(field.field, lifetime)).collect::<Result<Vec<Tokens>>>()?;
-    let field_matches = strukt.fields.iter().map(|field| match_field(field.field, config, lifetime));
+    let setup_fields = strukt.fields
+        .iter()
+        .map(|field| setup_field(field.field, lifetime))
+        .collect::<Result<Vec<Tokens>>>()?;
+    let field_matches = strukt.fields
+        .iter()
+        .map(|field| match_field(field.field, config, lifetime));
     let match_loop = match_loop(field_matches, config);
-    let write_fields = strukt.fields.iter().map(|field| write_field(field.field));
+    let write_fields =
+        strukt.fields.iter().map(|field| write_field(field.field));
     Ok(quote! {
         impl<'a> From<&'a [::syn::Attribute]> for #ident<'a> {
             fn from(attrs: &[::syn::Attribute]) -> #ident {

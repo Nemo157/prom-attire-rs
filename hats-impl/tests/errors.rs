@@ -4,7 +4,7 @@ extern crate hats_impl;
 extern crate quote;
 extern crate syn;
 
-use hats_impl::{ Config, ErrorKind };
+use hats_impl::{Config, ErrorKind};
 
 macro_rules! assert_error_kind {
     ($err:expr, $kind:pat) => {{
