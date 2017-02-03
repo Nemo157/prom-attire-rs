@@ -3,15 +3,23 @@ use syn;
 error_chain! {
     errors {
         StructBody {
-            description("#[derive(FromAttributes)] can only be applied to normal structs")
+            description("can only be applied to normal structs")
         }
 
         TyParams(ty_params: Vec<syn::TyParam>) {
-            description("#[derive(FromAttributes)] cannot have type parameters on the struct")
+            description("cannot have type parameters on the struct")
         }
 
         Lifetimes(lifetimes: Vec<syn::LifetimeDef>) {
-            description("#[derive(FromAttributes)] can have a maximum of 1 lifetime on the struct")
+            description("can have a maximum of 1 lifetime on the struct")
+        }
+
+        Field(field: syn::Field) {
+            description("field had an error")
+        }
+
+        Ty {
+            description("unsupported type")
         }
     }
 }

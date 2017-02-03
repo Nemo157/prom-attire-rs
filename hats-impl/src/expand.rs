@@ -1,9 +1,11 @@
 use syn;
-use quote::Tokens;
+use quote::{ Tokens, ToTokens };
 
-use dissect::{Struct, Field};
-use {Config, Result};
+use dissect::{Struct, Field, Wrapper, Ty, Lit};
+use Config;
+use errors::*;
 
+// TODO: add a config to id this
 fn docs_field(
     field: &syn::Field,
     lifetime: &Option<&syn::Lifetime>
@@ -25,178 +27,170 @@ fn docs_field(
     })
 }
 
-fn setup_field(
-    field: &syn::Field,
-    lifetime: &Option<&syn::Lifetime>
-) -> Result<Tokens> {
-    let ident = field.ident.as_ref().unwrap();
-    if ident.as_ref() == "docs" {
-        return docs_field(field, lifetime);
-    }
-    Ok(match field.ty {
-        syn::Ty::Path(None, ref path) => {
-            assert!(!path.global);
-            assert!(path.segments.len() == 1);
-            match path.segments[0].ident.as_ref() {
-                "Vec" => {
-                    quote! {
-                        let mut #ident = Vec::new();
-                    }
-                }
-                "Option" => {
-                    quote! {
-                        let mut #ident = None;
-                    }
-                }
-                "bool" => {
-                    quote! {
-                        let mut #ident = false;
-                    }
-                }
-                _ => return Err("bad type".into()),
+fn setup_field(field: &Field) -> Tokens {
+    let ident = &field.ident;
+    match field.ty {
+        Wrapper::Vec(_) => {
+            quote! {
+                let mut #ident = Vec::new();
             }
         }
-        _ => return Err("bad type".into()),
-    })
+        Wrapper::Option(_) => {
+            quote! {
+                let mut #ident = None;
+            }
+        }
+        Wrapper::None(Ty::Literal(Lit::Bool)) => {
+            quote! {
+                let mut #ident = false;
+            }
+        }
+        _ => unreachable!(),
+    }
 }
 
-fn write_field(field: &syn::Field) -> Tokens {
-    let ident = field.ident.as_ref().unwrap();
+fn write_field(field: &Field) -> Tokens {
+    let ident = &field.ident;
     quote! {
         #ident: #ident,
     }
 }
 
-fn match_field(
-    field: &syn::Field,
-    config: &Config,
-    lifetime: &Option<&syn::Lifetime>
-) -> Tokens {
-    let ident = field.ident.as_ref().unwrap();
-    if ident.as_ref() == "docs" {
-        return quote!();
-    }
+fn match_field(field: &Field, config: &Config) -> Tokens {
+    let ident = &field.ident;
     let ident_str = ident.as_ref();
-    let inner_ty = if let syn::Ty::Path(_, ref path) = field.ty {
-        let segment = &path.segments[0];
-        if segment.ident.as_ref() == "Option" {
-            if let syn::PathParameters::AngleBracketed(ref parameters) =
-                segment.parameters {
-                Some(&parameters.types[0])
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-    let str_type = syn::parse_type(quote! { Option<&#lifetime str> }.as_str())
-        .unwrap();
-    let vec_str_type =
-        syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
     let scope = config.scope.unwrap_or("");
-    if field.ty == syn::parse_type("bool").unwrap() {
-        quote! {
-            ::syn::MetaItem::NameValue(ref ident, ref value)
-                if ident.as_ref() == #ident_str => {
-                    #ident = match *value {
-                        ::syn::Lit::Bool(value) => value,
-                        ::syn::Lit::Str(ref value, _) => {
-                            value.parse().unwrap_or_else(|err| {
-                                panic!(
-                                    "Parsing attribute value {:?} for {}({}) failed: {}",
-                                    value, #scope, ident.as_ref(), err)
-                            })
-                        }
-                        _ => {
-                            panic!(
-                                "Unexpected attribute literal value {:?} for {}({}), expected {}",
-                                value, #scope, ident.as_ref(), "bool")
-                        }
-                    }
-                }
-
-            ::syn::MetaItem::Word(ref ident)
-                if ident.as_ref() == #ident_str => {
-                    #ident = true;
-                }
-        }
-    } else if field.ty == syn::parse_type("Option<char>").unwrap() {
-        quote! {
-            ::syn::MetaItem::NameValue(ref ident, ref value)
-                if ident.as_ref() == #ident_str => {
-                    match *value {
-                        ::syn::Lit::Str(ref value, _) => {
-                            if value.len() != 1 {
-                                panic!(
-                                    "Parsing attribute value {:?} for {}({}) failed: {}",
-                                    value, #scope, ident.as_ref(),
-                                    "expected one character");
+    match field.ty {
+        Wrapper::Vec(_) => {
+            quote! {
+                ::syn::MetaItem::NameValue(ref ident, ref value)
+                    if ident.as_ref() == #ident_str => {
+                        match *value {
+                            ::syn::Lit::Str(ref value, _) => {
+                                #ident.push(value.as_ref());
                             }
-                            #ident = Some(value.chars().next().unwrap());
-                        }
-                        _ => {
-                            panic!(
-                                "Unexpected attribute literal value {:?} for {}({}), expected {}",
-                                value, #scope, ident.as_ref(), "bool")
-                        }
-                    }
-                }
-        }
-    } else if field.ty == str_type {
-        quote! {
-            ::syn::MetaItem::NameValue(ref ident, ref value)
-                if ident.as_ref() == #ident_str => {
-                    match *value {
-                        ::syn::Lit::Str(ref value, _) => {
-                            #ident = Some(value.as_ref())
-                        }
-                        _ => {
-                            panic!(
-                                "Unexpected attribute literal value {:?} for {}({}), expected {}",
-                                value, #scope, ident.as_ref(), "bool")
-                        }
-                    }
-                }
-        }
-    } else if field.ty == vec_str_type {
-        quote! {
-            ::syn::MetaItem::NameValue(ref ident, ref value)
-                if ident.as_ref() == #ident_str => {
-                    match *value {
-                        ::syn::Lit::Str(ref value, _) => {
-                            #ident.push(value.as_ref());
-                        }
-                        _ => {
-                            panic!(
-                                "Unexpected attribute literal value {:?} for {}({}), expected {}",
-                                value, #scope, ident.as_ref(), "bool")
-                        }
-                    }
-                }
-        }
-    } else {
-        quote! {
-            ::syn::MetaItem::NameValue(ref ident, ref value)
-                if ident.as_ref() == #ident_str => {
-                    match *value {
-                        ::syn::Lit::Str(ref value, _) => {
-                            #ident = Some(<#inner_ty as ::std::str::FromStr>::from_str(value).unwrap_or_else(|err| {
+                            _ => {
                                 panic!(
-                                    "Parsing attribute value {:?} for {}({}) failed: {}",
-                                    value, #scope, ident.as_ref(), err)
-                            }));
-                        }
-                        _ => {
-                            panic!(
-                                "Unexpected attribute literal value {:?} for {}({}), expected {}",
-                                value, #scope, ident.as_ref(), "bool")
+                                    "Unexpected attribute literal value {:?} for {}({}), expected {}",
+                                    value, #scope, ident.as_ref(), "bool")
+                            }
                         }
                     }
-                }
+            }
         }
+
+        Wrapper::Option(Ty::Literal(Lit::Str)) => {
+            quote! {
+                ::syn::MetaItem::NameValue(ref ident, ref value)
+                    if ident.as_ref() == #ident_str => {
+                        match *value {
+                            ::syn::Lit::Str(ref value, _) => {
+                                #ident = Some(value.as_ref())
+                            }
+                            _ => {
+                                panic!(
+                                    "Unexpected attribute literal value {:?} for {}({}), expected {}",
+                                    value, #scope, ident.as_ref(), "bool")
+                            }
+                        }
+                    }
+            }
+        }
+
+        Wrapper::Option(Ty::Literal(Lit::ByteStr)) => {
+            quote! {
+                ::syn::MetaItem::NameValue(ref ident, ref value)
+                    if ident.as_ref() == #ident_str => {
+                        match *value {
+                            ::syn::Lit::Str(ref value, _) => {
+                                assert!(::std::ascii::AsciiExt::is_ascii(value.as_str()));
+                                #ident = Some(value.as_bytes())
+                            }
+                            _ => {
+                                panic!(
+                                    "Unexpected attribute literal value {:?} for {}({}), expected {}",
+                                    value, #scope, ident.as_ref(), "bool")
+                            }
+                        }
+                    }
+            }
+        }
+
+        Wrapper::Option(Ty::Literal(Lit::Char)) => {
+            quote! {
+                ::syn::MetaItem::NameValue(ref ident, ref value)
+                    if ident.as_ref() == #ident_str => {
+                        match *value {
+                            ::syn::Lit::Str(ref value, _) => {
+                                if value.len() != 1 {
+                                    panic!(
+                                        "Parsing attribute value {:?} for {}({}) failed: {}",
+                                        value, #scope, ident.as_ref(),
+                                        "expected one character");
+                                }
+                                #ident = Some(value.chars().next().unwrap());
+                            }
+                            _ => {
+                                panic!(
+                                    "Unexpected attribute literal value {:?} for {}({}), expected {}",
+                                    value, #scope, ident.as_ref(), "bool")
+                            }
+                        }
+                    }
+            }
+        }
+
+        Wrapper::Option(ref ty) => {
+            quote! {
+                ::syn::MetaItem::NameValue(ref ident, ref value)
+                    if ident.as_ref() == #ident_str => {
+                        match *value {
+                            ::syn::Lit::Str(ref value, _) => {
+                                #ident = Some(<#ty as ::std::str::FromStr>::from_str(value).unwrap_or_else(|err| {
+                                    panic!(
+                                        "Parsing attribute value {:?} for {}({}) failed: {}",
+                                        value, #scope, ident.as_ref(), err)
+                                }));
+                            }
+                            _ => {
+                                panic!(
+                                    "Unexpected attribute literal value {:?} for {}({}), expected {}",
+                                    value, #scope, ident.as_ref(), "bool")
+                            }
+                        }
+                    }
+            }
+        }
+
+        Wrapper::None(Ty::Literal(Lit::Bool)) => {
+            quote! {
+                ::syn::MetaItem::NameValue(ref ident, ref value)
+                    if ident.as_ref() == #ident_str => {
+                        #ident = match *value {
+                            ::syn::Lit::Bool(value) => value,
+                            ::syn::Lit::Str(ref value, _) => {
+                                value.parse().unwrap_or_else(|err| {
+                                    panic!(
+                                        "Parsing attribute value {:?} for {}({}) failed: {}",
+                                        value, #scope, ident.as_ref(), err)
+                                })
+                            }
+                            _ => {
+                                panic!(
+                                    "Unexpected attribute literal value {:?} for {}({}), expected {}",
+                                    value, #scope, ident.as_ref(), "bool")
+                            }
+                        }
+                    }
+
+                ::syn::MetaItem::Word(ref ident)
+                    if ident.as_ref() == #ident_str => {
+                        #ident = true;
+                    }
+            }
+        }
+
+        _ => unreachable!(),
     }
 }
 
@@ -237,24 +231,23 @@ fn match_loop<I: Iterator<Item = Tokens>>(
     }
 }
 
-pub fn expand(strukt: &Struct, config: &Config) -> Result<Tokens> {
+pub fn expand(strukt: &Struct, config: &Config) -> Tokens {
     let ident = &strukt.ast.ident;
     let setup_fields = strukt.fields
         .iter()
-        .map(|field| setup_field(field.field, &strukt.lifetime))
-        .collect::<Result<Vec<Tokens>>>()?;
+        .map(setup_field);
     let field_matches = strukt.fields
         .iter()
-        .map(|field| match_field(field.field, config, &strukt.lifetime));
+        .map(|field| match_field(field, config));
     let match_loop = match_loop(field_matches, config);
     let write_fields =
-        strukt.fields.iter().map(|field| write_field(field.field));
+        strukt.fields.iter().map(write_field);
     let a = if strukt.lifetime.is_some() {
         quote!(<'a>)
     } else {
         quote!()
     };
-    Ok(quote! {
+    quote! {
         impl<'a> From<&'a [::syn::Attribute]> for #ident#a {
             fn from(attrs: &[::syn::Attribute]) -> #ident {
                 #(#setup_fields)*
@@ -264,5 +257,20 @@ pub fn expand(strukt: &Struct, config: &Config) -> Result<Tokens> {
                 }
             }
         }
-    })
+    }
+}
+
+
+impl<'a> ToTokens for Ty<'a> {
+    fn to_tokens(&self, tokens: &mut Tokens) {
+        match *self {
+            Ty::Literal(Lit::Bool) => tokens.append("bool"),
+            Ty::Literal(Lit::Char) => tokens.append("char"),
+            Ty::Literal(Lit::Int(ty)) => tokens.append(&ty.to_string()),
+            Ty::Literal(Lit::Str) => panic!("str"),
+            Ty::Literal(Lit::ByteStr) => panic!("bytestr"),
+            Ty::Literal(Lit::Float(ty)) => tokens.append(&ty.to_string()),
+            Ty::Custom(ref ty) => ty.to_tokens(tokens),
+        }
+    }
 }
