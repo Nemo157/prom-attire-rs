@@ -29,6 +29,7 @@ pub enum Ty<'a> {
     Custom(&'a syn::Ty),
 }
 
+#[derive(Clone, Copy)]
 pub enum Lit {
     Bool,
     Char,
@@ -103,6 +104,16 @@ impl<'a> TryFrom<&'a syn::Ty> for Wrapper<'a> {
     }
 }
 
+impl<'a> Wrapper<'a> {
+    pub fn inner(&self) -> &Ty<'a> {
+        match *self {
+            Wrapper::None(ref ty) => ty,
+            Wrapper::Option(ref ty) => ty,
+            Wrapper::Vec(ref ty) => ty,
+        }
+    }
+}
+
 impl<'a> TryFrom<&'a syn::PathParameters> for Ty<'a> {
     type Err = Error;
 
@@ -166,5 +177,14 @@ impl<'a> TryFrom<&'a syn::Ty> for Ty<'a> {
             }
             _ => bail!(ErrorKind::Ty),
         })
+    }
+}
+
+impl<'a> Ty<'a> {
+    pub fn lit(&self) -> Option<Lit> {
+        match *self {
+            Ty::Literal(lit) => Some(lit),
+            Ty::Custom(_) => None,
+        }
     }
 }
