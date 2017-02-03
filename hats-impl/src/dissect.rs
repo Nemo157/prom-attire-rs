@@ -15,6 +15,10 @@ pub struct Field<'a> {
     pub field: &'a syn::Field,
 }
 
+fn dissect_field<'a>(field: &'a syn::Field) -> Result<Field<'a>> {
+    Ok(Field { field: field })
+}
+
 pub fn dissect<'a>(
     ast: &'a DeriveInput,
     config: &'a Config<'a>
@@ -33,8 +37,6 @@ pub fn dissect<'a>(
     Ok(Struct {
         ast: ast,
         lifetime: ast.generics.lifetimes.iter().next().map(|l| &l.lifetime),
-        fields: fields.iter()
-            .map(|field| Field { field: field })
-            .collect(),
+        fields: fields.iter().map(dissect_field).collect::<Result<_>>()?,
     })
 }
