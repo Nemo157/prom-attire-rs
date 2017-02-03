@@ -1,5 +1,6 @@
 # prom-attire
-## **Pro**cedural **M**acro **Attri**but**e**s
+
+**Pro**cedural **M**acro **Attri**but**e**s
 
 For when you need the best dressed procedural macro.
 
