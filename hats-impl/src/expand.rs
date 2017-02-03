@@ -4,7 +4,10 @@ use quote::Tokens;
 use dissect::{Struct, Field};
 use {Config, Result};
 
-fn docs_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Result<Tokens> {
+fn docs_field(
+    field: &syn::Field,
+    lifetime: &Option<&syn::Lifetime>
+) -> Result<Tokens> {
     let expected_type =
         syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
     if field.ty != expected_type {
@@ -24,7 +27,7 @@ fn docs_field(field: &syn::Field, lifetime: &syn::Lifetime) -> Result<Tokens> {
 
 fn setup_field(
     field: &syn::Field,
-    lifetime: &syn::Lifetime
+    lifetime: &Option<&syn::Lifetime>
 ) -> Result<Tokens> {
     let ident = field.ident.as_ref().unwrap();
     if ident.as_ref() == "docs" {
@@ -67,7 +70,7 @@ fn write_field(field: &syn::Field) -> Tokens {
 fn match_field(
     field: &syn::Field,
     config: &Config,
-    lifetime: &syn::Lifetime
+    lifetime: &Option<&syn::Lifetime>
 ) -> Tokens {
     let ident = field.ident.as_ref().unwrap();
     if ident.as_ref() == "docs" {
@@ -235,20 +238,24 @@ fn match_loop<I: Iterator<Item = Tokens>>(
 }
 
 pub fn expand(strukt: &Struct, config: &Config) -> Result<Tokens> {
-    let lifetime = &strukt.lifetime.unwrap();
     let ident = &strukt.ast.ident;
     let setup_fields = strukt.fields
         .iter()
-        .map(|field| setup_field(field.field, lifetime))
+        .map(|field| setup_field(field.field, &strukt.lifetime))
         .collect::<Result<Vec<Tokens>>>()?;
     let field_matches = strukt.fields
         .iter()
-        .map(|field| match_field(field.field, config, lifetime));
+        .map(|field| match_field(field.field, config, &strukt.lifetime));
     let match_loop = match_loop(field_matches, config);
     let write_fields =
         strukt.fields.iter().map(|field| write_field(field.field));
+    let a = if strukt.lifetime.is_some() {
+        quote!(<'a>)
+    } else {
+        quote!()
+    };
     Ok(quote! {
-        impl<'a> From<&'a [::syn::Attribute]> for #ident<'a> {
+        impl<'a> From<&'a [::syn::Attribute]> for #ident#a {
             fn from(attrs: &[::syn::Attribute]) -> #ident {
                 #(#setup_fields)*
                 #match_loop
