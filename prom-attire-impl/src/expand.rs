@@ -1,5 +1,5 @@
 use syn;
-use quote::{ Tokens, ToTokens };
+use quote::{Tokens, ToTokens};
 
 use dissect::{Struct, Field, Wrapper, Ty, Lit};
 use Config;
@@ -240,8 +240,7 @@ pub fn expand(strukt: &Struct, config: &Config) -> Tokens {
         .iter()
         .map(|field| match_field(field, config));
     let match_loop = match_loop(field_matches, config);
-    let write_fields =
-        strukt.fields.iter().map(write_field);
+    let write_fields = strukt.fields.iter().map(write_field);
     let a = if strukt.lifetime.is_some() {
         quote!(<'a>)
     } else {

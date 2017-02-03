@@ -4,7 +4,7 @@
 use syn;
 
 use errors::*;
-use tmp::{ TryFrom, TryInto };
+use tmp::{TryFrom, TryInto};
 
 pub struct Struct<'a> {
     pub ast: &'a syn::DeriveInput,
@@ -57,7 +57,11 @@ impl<'a> TryFrom<&'a syn::DeriveInput> for Struct<'a> {
 
         Ok(Struct {
             ast: ast,
-            lifetime: ast.generics.lifetimes.iter().next().map(|l| &l.lifetime),
+            lifetime: ast.generics
+                .lifetimes
+                .iter()
+                .next()
+                .map(|l| &l.lifetime),
             fields: fields.iter().map(Field::try_from).collect::<Result<_>>()?,
         })
     }
@@ -70,7 +74,8 @@ impl<'a> TryFrom<&'a syn::Field> for Field<'a> {
         Ok(Field {
             ast: ast,
             ident: ast.ident.as_ref().unwrap(),
-            ty: (&ast.ty).try_into().chain_err(|| ErrorKind::Field(ast.clone()))?,
+            ty: (&ast.ty).try_into()
+                .chain_err(|| ErrorKind::Field(ast.clone()))?,
         })
     }
 }
@@ -144,7 +149,7 @@ impl<'a> TryFrom<&'a syn::Ty> for Ty<'a> {
                     "isize" => Ty::Literal(Lit::Int(syn::IntTy::Isize)),
                     "f32" => Ty::Literal(Lit::Float(syn::FloatTy::F32)),
                     "f64" => Ty::Literal(Lit::Float(syn::FloatTy::F64)),
-                    _ => Ty::Custom(ty)
+                    _ => Ty::Custom(ty),
                 }
             }
             syn::Ty::Rptr(_, ref ty) => {
