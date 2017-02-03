@@ -225,7 +225,9 @@ fn match_loop<I: Iterator<Item = Tokens>>(
                                 match *item {
                                     #(#matches)*
                                     ref item => {
-                                        panic!("Unexpected attribute {:?}", item);
+                                        println!(
+                                            "Unexpected attribute under '{}' ({:?})",
+                                            #scope, item);
                                     }
                                 }
                             }
@@ -239,8 +241,9 @@ fn match_loop<I: Iterator<Item = Tokens>>(
             for attr in attrs {
                 match attr.value {
                     #(#matches)*
-                    ref item => {
-                        panic!("Unexpected attribute {:?}", item);
+                    _ => {
+                        // Ignore it, we're unscoped so no control over what
+                        // appears
                     }
                 }
             }
