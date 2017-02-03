@@ -33,7 +33,7 @@ fn parse_byte_str() {
     };
     let ast = syn::parse_derive_input(input.as_str()).unwrap();
     let attrs = A::from(ast.attrs.as_slice());
-    assert_eq!(attrs.b, Some(b"test"));
+    assert_eq!(attrs.b, Some(&b"test"[..]));
 }
 
 #[test]
