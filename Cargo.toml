@@ -1,5 +1,5 @@
 [package]
-name = "hats"
+name = "prom-attire"
 version = "0.1.0"
 authors = ["Wim Looman <wim@nemo157.com>"]
 
@@ -7,12 +7,12 @@ authors = ["Wim Looman <wim@nemo157.com>"]
 proc-macro = true
 
 [workspace]
-members = ["hats-bootstrap", "hats-impl"]
+members = ["prom-attire-bootstrap", "prom-attire-impl"]
 
 [dependencies]
 syn = "0.11.4"
-hats-bootstrap = { path = "hats-bootstrap" }
-hats-impl = { path = "hats-impl" }
+prom-attire-bootstrap = { path = "prom-attire-bootstrap" }
+prom-attire-impl = { path = "prom-attire-impl" }
 
 [dev_dependencies]
 quote = "0.3.12"

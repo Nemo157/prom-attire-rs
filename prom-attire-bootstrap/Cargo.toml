@@ -1,5 +1,5 @@
 [package]
-name = "hats-bootstrap"
+name = "prom-attire-bootstrap"
 version = "0.1.0"
 authors = ["Wim Looman <wim@nemo157.com>"]
 
@@ -8,4 +8,4 @@ proc-macro = true
 
 [dependencies]
 syn = "0.11.4"
-hats-impl = { path = "../hats-impl" }
+prom-attire-impl = { path = "../prom-attire-impl" }

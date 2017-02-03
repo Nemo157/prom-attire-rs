@@ -1,5 +1,5 @@
 #[macro_use]
-extern crate hats;
+extern crate prom_attire;
 #[macro_use]
 extern crate quote;
 extern crate syn;
