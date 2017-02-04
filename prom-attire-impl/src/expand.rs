@@ -8,12 +8,22 @@ fn setup_docs(field: &Field) -> Tokens {
     let ident = &field.ident;
     quote! {
         let #ident = attrs.iter()
-            .filter_map(|a| match a.value {
-                ::syn::MetaItem::NameValue(ref name, ::syn::Lit::Str(ref doc, _))
-                    if name.as_ref() == "doc" => Some(doc),
-                _ => None,
+            .filter_map(|a| {
+                use ::syn::MetaItem::NameValue;
+                if a.is_sugared_doc {
+                    match a.value {
+                        NameValue(_, ::syn::Lit::Str(ref doc, _)) =>
+                            Some(doc.trim_left_matches("///")),
+                        _ => None,
+                    }
+                } else {
+                    match a.value {
+                        NameValue(ref name, ::syn::Lit::Str(ref doc, _))
+                            if name.as_ref() == "doc" => Some(doc.as_str()),
+                        _ => None,
+                    }
+                }
             })
-            .map(String::as_str)
             .collect();
     }
 }
