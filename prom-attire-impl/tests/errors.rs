@@ -24,7 +24,10 @@ macro_rules! assert_error_kind {
 #[test]
 fn enuum() {
     let input = quote! { enum A {} };
-    let config = Config { scope: None };
+    let config = Config {
+        scope: None,
+        docs: None,
+    };
     let result = prom_attire_impl::derive(input.as_str(), config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::StructBody)
 }
@@ -32,7 +35,25 @@ fn enuum() {
 #[test]
 fn tuple_struct() {
     let input = quote! { struct A(); };
-    let config = Config { scope: None };
+    let config = Config {
+        scope: None,
+        docs: None,
+    };
     let result = prom_attire_impl::derive(input.as_str(), config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::StructBody)
+}
+
+#[test]
+fn bad_docs_type() {
+    let input = quote! {
+        struct A {
+            docs: Vec<u64>,
+        }
+    };
+    let config = Config {
+        scope: None,
+        docs: Some("docs"),
+    };
+    let result = prom_attire_impl::derive(input.as_str(), config);
+    assert_error_kind!(result.unwrap_err(), ErrorKind::DocsTy(_))
 }

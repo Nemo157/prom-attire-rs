@@ -16,11 +16,12 @@ use tmp::TryInto;
 
 pub struct Config<'a> {
     pub scope: Option<&'a str>,
+    pub docs: Option<&'a str>,
 }
 
 pub fn derive(input: &str, config: Config) -> Result<String> {
     let ast = syn::parse_derive_input(input)?;
-    let strukt = (&ast).try_into()?;
+    let strukt = (&ast, &config).try_into()?;
     let expanded = expand::expand(&strukt, &config);
     Ok(expanded.to_string())
 }

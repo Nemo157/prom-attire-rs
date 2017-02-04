@@ -21,5 +21,9 @@ error_chain! {
         Ty {
             description("unsupported type")
         }
+
+        DocsTy(field: syn::Field) {
+            description("docs field must be a Vec<&str>")
+        }
     }
 }

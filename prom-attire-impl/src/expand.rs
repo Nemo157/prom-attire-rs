@@ -3,28 +3,19 @@ use quote::{Tokens, ToTokens};
 
 use dissect::{Struct, Field, Wrapper, Ty, Lit};
 use Config;
-use errors::*;
 
-// TODO: add a config to id this
-fn docs_field(
-    field: &syn::Field,
-    lifetime: &Option<&syn::Lifetime>
-) -> Result<Tokens> {
-    let expected_type =
-        syn::parse_type(quote! { Vec<&#lifetime str> }.as_str()).unwrap();
-    if field.ty != expected_type {
-        return Err("bad doc type".into());
-    }
-    Ok(quote! {
-        let docs = attrs.iter()
-            .filter(|a| a.is_sugared_doc)
-            .map(|a| match a.value {
-                ::syn::MetaItem::NameValue(_, ::syn::Lit::Str(ref doc, _)) => doc,
-                _ => unreachable!(),
+fn setup_docs(field: &Field) -> Tokens {
+    let ident = &field.ident;
+    quote! {
+        let #ident = attrs.iter()
+            .filter_map(|a| match a.value {
+                ::syn::MetaItem::NameValue(ref name, ::syn::Lit::Str(ref doc, _))
+                    if name.as_ref() == "doc" => Some(doc),
+                _ => None,
             })
-            .map(|line| line.trim_left_matches('/').trim())
+            .map(String::as_str)
             .collect();
-    })
+    }
 }
 
 fn setup_field(field: &Field) -> Tokens {
@@ -255,12 +246,14 @@ pub fn expand(strukt: &Struct, config: &Config) -> Tokens {
     let ident = &strukt.ast.ident;
     let setup_fields = strukt.fields
         .iter()
-        .map(setup_field);
+        .map(setup_field)
+        .chain(strukt.docs.as_ref().map(setup_docs));
     let field_matches = strukt.fields
         .iter()
         .map(|field| match_field(field, config));
     let match_loop = match_loop(field_matches, config);
-    let write_fields = strukt.fields.iter().map(write_field);
+    let write_fields =
+        strukt.fields.iter().chain(&strukt.docs).map(write_field);
     let a = if strukt.lifetime.is_some() {
         quote!(<'a>)
     } else {

@@ -5,31 +5,37 @@ use syn;
 
 use errors::*;
 use tmp::{TryFrom, TryInto};
+use Config;
 
+#[derive(Debug)]
 pub struct Struct<'a> {
     pub ast: &'a syn::DeriveInput,
+    pub docs: Option<Field<'a>>,
     pub lifetime: Option<&'a syn::Lifetime>,
     pub fields: Vec<Field<'a>>,
 }
 
+#[derive(Debug)]
 pub struct Field<'a> {
     pub ast: &'a syn::Field,
     pub ident: &'a syn::Ident,
     pub ty: Wrapper<'a>,
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum Wrapper<'a> {
     None(Ty<'a>),
     Option(Ty<'a>),
     Vec(Ty<'a>),
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum Ty<'a> {
     Literal(Lit),
     Custom(&'a syn::Ty),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Lit {
     Bool,
     Char,
@@ -39,10 +45,11 @@ pub enum Lit {
     Float(syn::FloatTy),
 }
 
-impl<'a> TryFrom<&'a syn::DeriveInput> for Struct<'a> {
+impl<'a> TryFrom<(&'a syn::DeriveInput, &'a Config<'a>)> for Struct<'a> {
     type Err = Error;
 
-    fn try_from(ast: &'a syn::DeriveInput) -> Result<Self> {
+    fn try_from((ast, config): (&'a syn::DeriveInput, &'a Config<'a>))
+        -> Result<Self> {
         let fields = match ast.body {
             syn::Body::Struct(syn::VariantData::Struct(ref fields)) => fields,
             _ => bail!(ErrorKind::StructBody),
@@ -56,14 +63,42 @@ impl<'a> TryFrom<&'a syn::DeriveInput> for Struct<'a> {
             bail!(ErrorKind::Lifetimes(ast.generics.lifetimes.clone()));
         }
 
+        let lifetime = ast.generics
+            .lifetimes
+            .iter()
+            .next()
+            .map(|l| &l.lifetime);
+
+        let docs_field = config.docs.and_then(|docs| {
+            fields.iter()
+                .find(|field| field.ident.as_ref().unwrap().as_ref() == docs)
+        });
+
+        // Can't use Option::map because there's no simple transform
+        // Option<Result<T>> -> Result<Option<T>> for the ? op to apply to
+        let docs = match docs_field {
+            Some(field) => {
+                let docs: Field = field.try_into()?;
+                if docs.ty != Wrapper::Vec(Ty::Literal(Lit::Str)) {
+                    bail!(ErrorKind::DocsTy(field.clone()));
+                }
+                Some(docs)
+            }
+            None => None,
+        };
+
+        let fields = fields.iter()
+            .filter(|field| {
+                Some(field.ident.as_ref().unwrap().as_ref()) != config.docs
+            })
+            .map(Field::try_from)
+            .collect::<Result<_>>()?;
+
         Ok(Struct {
             ast: ast,
-            lifetime: ast.generics
-                .lifetimes
-                .iter()
-                .next()
-                .map(|l| &l.lifetime),
-            fields: fields.iter().map(Field::try_from).collect::<Result<_>>()?,
+            docs: docs,
+            lifetime: lifetime,
+            fields: fields,
         })
     }
 }

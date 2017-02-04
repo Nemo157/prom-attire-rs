@@ -46,7 +46,7 @@ fn unscoped_extra_attributes_are_ignored() {
     };
     let ast = syn::parse_derive_input(input.as_str()).unwrap();
     // Should not panic here just because there's an extra attribute
-    let attrs = A::from(ast.attrs.as_slice());
+    A::from(ast.attrs.as_slice());
 }
 
 #[test]
@@ -61,5 +61,5 @@ fn scoped_extra_attributes_warn() {
     let ast = syn::parse_derive_input(input.as_str()).unwrap();
     // Should not panic here just because there's an extra attribute
     // Not sure how warnings should be output actually.......
-    let attrs = A::from(ast.attrs.as_slice());
+    A::from(ast.attrs.as_slice());
 }
