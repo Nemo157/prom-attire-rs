@@ -5,12 +5,12 @@ extern crate syn;
 extern crate prom_attire_bootstrap;
 extern crate prom_attire_impl;
 
-#[derive(FromAttributesBootstrap)]
+#[derive(PromAttireBootstrap)]
 struct Attributes<'a> {
     scope: Option<&'a str>,
 }
 
-#[proc_macro_derive(FromAttributes, attributes(attire))]
+#[proc_macro_derive(PromAttire, attributes(attire))]
 pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = input.to_string();
 

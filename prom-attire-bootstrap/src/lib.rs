@@ -3,7 +3,7 @@ extern crate syn;
 
 extern crate prom_attire_impl;
 
-#[proc_macro_derive(FromAttributesBootstrap)]
+#[proc_macro_derive(PromAttireBootstrap)]
 pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let config = prom_attire_impl::Config {
         scope: Some("attire"),

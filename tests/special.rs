@@ -7,7 +7,7 @@ extern crate syn;
 #[test]
 fn special_bool_unwrapped() {
     // bool should support being an unwrapped type, defaulting to false
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: bool,
     }
@@ -23,7 +23,7 @@ fn special_bool_unwrapped() {
 #[test]
 fn special_bool_word() {
     // bool should support being just a word without setting a value to it
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<bool>,
     }
@@ -38,7 +38,7 @@ fn special_bool_word() {
 
 #[test]
 fn unscoped_extra_attributes_are_ignored() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {}
     let input = quote! {
         #[b = "false"]
@@ -51,7 +51,7 @@ fn unscoped_extra_attributes_are_ignored() {
 
 #[test]
 fn scoped_extra_attributes_warn() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     #[attire(scope = "carrot")]
     struct A {}
     let input = quote! {

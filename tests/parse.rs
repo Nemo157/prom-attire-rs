@@ -8,7 +8,7 @@ use std::net::{IpAddr, Ipv4Addr};
 
 #[test]
 fn parse_string() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A<'a> {
         b: Option<&'a str>,
     }
@@ -23,7 +23,7 @@ fn parse_string() {
 
 #[test]
 fn parse_byte_str() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A<'a> {
         b: Option<&'a [u8]>,
     }
@@ -38,7 +38,7 @@ fn parse_byte_str() {
 
 #[test]
 fn parse_char() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<char>,
     }
@@ -53,7 +53,7 @@ fn parse_char() {
 
 #[test]
 fn parse_u8() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<u8>,
     }
@@ -68,7 +68,7 @@ fn parse_u8() {
 
 #[test]
 fn parse_i8() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<i8>,
     }
@@ -83,7 +83,7 @@ fn parse_i8() {
 
 #[test]
 fn parse_u16() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<u16>,
     }
@@ -98,7 +98,7 @@ fn parse_u16() {
 
 #[test]
 fn parse_i16() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<i16>,
     }
@@ -113,7 +113,7 @@ fn parse_i16() {
 
 #[test]
 fn parse_u32() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<u32>,
     }
@@ -128,7 +128,7 @@ fn parse_u32() {
 
 #[test]
 fn parse_i32() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<i32>,
     }
@@ -143,7 +143,7 @@ fn parse_i32() {
 
 #[test]
 fn parse_u64() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<u64>,
     }
@@ -158,7 +158,7 @@ fn parse_u64() {
 
 #[test]
 fn parse_i64() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<i64>,
     }
@@ -173,7 +173,7 @@ fn parse_i64() {
 
 #[test]
 fn parse_usize() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<usize>,
     }
@@ -188,7 +188,7 @@ fn parse_usize() {
 
 #[test]
 fn parse_isize() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<isize>,
     }
@@ -203,7 +203,7 @@ fn parse_isize() {
 
 #[test]
 fn parse_f32() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<f32>,
     }
@@ -218,7 +218,7 @@ fn parse_f32() {
 
 #[test]
 fn parse_f64() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<f64>,
     }
@@ -233,7 +233,7 @@ fn parse_f64() {
 
 #[test]
 fn parse_bool() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<bool>,
     }
@@ -248,7 +248,7 @@ fn parse_bool() {
 
 #[test]
 fn parse_from_str() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<IpAddr>,
     }

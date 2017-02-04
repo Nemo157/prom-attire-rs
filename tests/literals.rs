@@ -6,7 +6,7 @@ extern crate syn;
 
 #[test]
 fn literal_string() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A<'a> {
         b: Option<&'a str>,
     }
@@ -21,7 +21,7 @@ fn literal_string() {
 
 #[test]
 fn literal_byte_str() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A<'a> {
         b: Option<&'a [u8]>,
     }
@@ -36,7 +36,7 @@ fn literal_byte_str() {
 
 #[test]
 fn literal_char() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<char>,
     }
@@ -51,7 +51,7 @@ fn literal_char() {
 
 #[test]
 fn literal_u8() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<u8>,
     }
@@ -66,7 +66,7 @@ fn literal_u8() {
 
 #[test]
 fn literal_i8() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<i8>,
     }
@@ -81,7 +81,7 @@ fn literal_i8() {
 
 #[test]
 fn literal_u16() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<u16>,
     }
@@ -96,7 +96,7 @@ fn literal_u16() {
 
 #[test]
 fn literal_i16() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<i16>,
     }
@@ -111,7 +111,7 @@ fn literal_i16() {
 
 #[test]
 fn literal_u32() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<u32>,
     }
@@ -126,7 +126,7 @@ fn literal_u32() {
 
 #[test]
 fn literal_i32() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<i32>,
     }
@@ -141,7 +141,7 @@ fn literal_i32() {
 
 #[test]
 fn literal_u64() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<u64>,
     }
@@ -156,7 +156,7 @@ fn literal_u64() {
 
 #[test]
 fn literal_i64() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<i64>,
     }
@@ -171,7 +171,7 @@ fn literal_i64() {
 
 #[test]
 fn literal_usize() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<usize>,
     }
@@ -186,7 +186,7 @@ fn literal_usize() {
 
 #[test]
 fn literal_isize() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<isize>,
     }
@@ -201,7 +201,7 @@ fn literal_isize() {
 
 #[test]
 fn literal_f32() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<f32>,
     }
@@ -216,7 +216,7 @@ fn literal_f32() {
 
 #[test]
 fn literal_f64() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<f64>,
     }
@@ -231,7 +231,7 @@ fn literal_f64() {
 
 #[test]
 fn literal_bool() {
-    #[derive(FromAttributes)]
+    #[derive(PromAttire)]
     struct A {
         b: Option<bool>,
     }
