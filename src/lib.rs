@@ -15,13 +15,42 @@ struct Attributes<'a> {
 pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = input.to_string();
 
-    let ast = syn::parse_derive_input(&input).unwrap();
-    let attrs = Attributes::from(ast.attrs.as_slice());
+    let ast = match syn::parse_derive_input(&input) {
+        Ok(ast) => ast,
+        Err(err) => {
+            println!("{}", err);
+            panic!("Internal error in prom-attire (probably)");
+        }
+    };
+
+    let attrs = match Attributes::try_from(ast.attrs.as_slice()) {
+        Ok(attrs) => attrs,
+        Err(errs) => {
+            for err in errs {
+                println!("{}", err);
+            }
+            panic!("Invalid attributes specified for prom-attire macro");
+        }
+    };
 
     let config = prom_attire_impl::Config {
         scope: attrs.scope,
         docs: attrs.docs,
     };
 
-    prom_attire_impl::derive(&input, config).unwrap().parse().unwrap()
+    let expanded = match prom_attire_impl::derive(&input, config) {
+        Ok(expanded) => expanded,
+        Err(err) => {
+            println!("{}", err);
+            panic!("Expanding prom-attire failed");
+        }
+    };
+
+    match expanded.parse() {
+        Ok(parsed) => parsed,
+        Err(err) => {
+            println!("{:?}", err);
+            panic!("Internal error in prom-attire");
+        }
+    }
 }
