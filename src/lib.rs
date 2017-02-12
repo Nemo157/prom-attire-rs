@@ -14,6 +14,11 @@ struct Attributes<'a> {
     docs: Option<&'a str>,
 }
 
+#[derive(PromAttireBootstrap)]
+struct FieldAttributes<'a> {
+    attribute: Option<&'a str>,
+}
+
 #[proc_macro_derive(PromAttire, attributes(attire))]
 pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = input.to_string();
@@ -39,6 +44,20 @@ pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let config = prom_attire_impl::Config {
         scope: attrs.scope,
         docs: attrs.docs,
+        parse_field_config: &|attrs| {
+            let attrs = match FieldAttributes::try_from(attrs) {
+                Ok(attrs) => attrs,
+                Err(errs) => {
+                    for err in errs {
+                        println!("{}", err);
+                    }
+                    panic!("Invalid attributes specified for prom-attire macro");
+                }
+            };
+            prom_attire_impl::FieldConfig {
+                attribute: attrs.attribute,
+            }
+        }
     };
 
     let expanded = match prom_attire_impl::derive(&input, config) {

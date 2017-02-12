@@ -46,6 +46,8 @@ fn everything() {
         parsed_ip_addr: Option<IpAddr>,
         unwrapped_bool: bool,
         bool_word: Option<bool>,
+        #[attire(attribute = "something_else")]
+        something: Option<&'a str>,
     }
 
     let input = r#"
@@ -83,6 +85,7 @@ fn everything() {
         #[everything(parsed_ip_addr = "127.0.0.1")]
         #[everything(unwrapped_bool = true)]
         #[everything(bool_word)]
+        #[everything(something_else = "this")]
         #[doc = r" Some docs"]
         /// For this struct
         struct Foo {}
@@ -127,6 +130,7 @@ fn everything() {
         parsed_ip_addr: Some(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))),
         unwrapped_bool: true,
         bool_word: Some(true),
+        something: Some("this"),
     };
 
     assert_eq!(attrs, expected);

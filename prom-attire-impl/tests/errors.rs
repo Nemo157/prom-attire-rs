@@ -4,7 +4,7 @@ extern crate prom_attire_impl;
 extern crate quote;
 extern crate syn;
 
-use prom_attire_impl::{Config, ErrorKind};
+use prom_attire_impl::{Config, FieldConfig, ErrorKind};
 
 macro_rules! assert_error_kind {
     ($err:expr, $kind:pat) => {{
@@ -27,6 +27,7 @@ fn enuum() {
     let config = Config {
         scope: None,
         docs: None,
+        parse_field_config: &|_| FieldConfig { attribute: None },
     };
     let result = prom_attire_impl::derive(input.as_str(), config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::StructBody)
@@ -38,6 +39,7 @@ fn tuple_struct() {
     let config = Config {
         scope: None,
         docs: None,
+        parse_field_config: &|_| FieldConfig { attribute: None },
     };
     let result = prom_attire_impl::derive(input.as_str(), config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::StructBody)
@@ -53,6 +55,7 @@ fn bad_docs_type() {
     let config = Config {
         scope: None,
         docs: Some("docs"),
+        parse_field_config: &|_| FieldConfig { attribute: None },
     };
     let result = prom_attire_impl::derive(input.as_str(), config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::DocsTy(_))

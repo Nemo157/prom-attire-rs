@@ -17,6 +17,11 @@ use tmp::TryInto;
 pub struct Config<'a> {
     pub scope: Option<&'a str>,
     pub docs: Option<&'a str>,
+    pub parse_field_config: &'a Fn(&[syn::Attribute]) -> FieldConfig,
+}
+
+pub struct FieldConfig<'a> {
+    pub attribute: Option<&'a str>,
 }
 
 pub fn derive(input: &str, config: Config) -> Result<String> {

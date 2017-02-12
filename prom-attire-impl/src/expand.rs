@@ -239,13 +239,13 @@ fn match_write(field: &Field, ty: &Wrapper) -> Tokens {
 }
 
 fn match_special(field: &Field, ty: &Wrapper) -> Tokens {
-    let ident_str = field.ident.as_ref();
+    let attribute = &field.attribute;
     let write = match_write(field, ty);
     match *ty.inner() {
         Ty::Literal(Lit::Bool) => {
             quote! {
                 ::syn::MetaItem::Word(ref ident)
-                    if ident.as_ref() == #ident_str => {
+                    if ident.as_ref() == #attribute => {
                         let value = true;
                         #write
                     }
@@ -256,8 +256,7 @@ fn match_special(field: &Field, ty: &Wrapper) -> Tokens {
 }
 
 fn match_field(ctx: &Context, field: &Field) -> Tokens {
-    let ident = &field.ident;
-    let ident_str = ident.as_ref();
+    let attribute = &field.attribute;
     let error = match_error(ctx, field.ty.inner());
     let parse = match_parse(ctx, field.ty.inner());
     let literal = field.ty
@@ -268,7 +267,7 @@ fn match_field(ctx: &Context, field: &Field) -> Tokens {
     let special = match_special(field, &field.ty);
     quote! {
         ::syn::MetaItem::NameValue(ref ident, ref value)
-            if ident.as_ref() == #ident_str => {
+            if ident.as_ref() == #attribute => {
                 let value = match *value {
                     ::syn::Lit::Str(ref value, _) => {
                         #parse

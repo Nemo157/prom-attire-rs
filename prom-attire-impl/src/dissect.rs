@@ -5,7 +5,7 @@ use syn;
 
 use errors::*;
 use tmp::{TryFrom, TryInto};
-use Config;
+use {Config, FieldConfig};
 
 #[derive(Debug)]
 pub struct Struct<'a> {
@@ -19,6 +19,7 @@ pub struct Struct<'a> {
 pub struct Field<'a> {
     pub ast: &'a syn::Field,
     pub ident: &'a syn::Ident,
+    pub attribute: &'a str,
     pub ty: Wrapper<'a>,
 }
 
@@ -78,7 +79,9 @@ impl<'a> TryFrom<(&'a syn::DeriveInput, &'a Config<'a>)> for Struct<'a> {
         // Option<Result<T>> -> Result<Option<T>> for the ? op to apply to
         let docs = match docs_field {
             Some(field) => {
-                let docs: Field = field.try_into()?;
+                let config = (config.parse_field_config)(field.attrs
+                    .as_slice());
+                let docs: Field = (field, config).try_into()?;
                 if docs.ty != Wrapper::Vec(Ty::Literal(Lit::Str)) {
                     bail!(ErrorKind::DocsTy(field.clone()));
                 }
@@ -91,7 +94,11 @@ impl<'a> TryFrom<(&'a syn::DeriveInput, &'a Config<'a>)> for Struct<'a> {
             .filter(|field| {
                 Some(field.ident.as_ref().unwrap().as_ref()) != config.docs
             })
-            .map(Field::try_from)
+            .map(|field| {
+                let config = (config.parse_field_config)(field.attrs
+                    .as_slice());
+                (field, config).try_into()
+            })
             .collect::<Result<_>>()?;
 
         Ok(Struct {
@@ -103,13 +110,16 @@ impl<'a> TryFrom<(&'a syn::DeriveInput, &'a Config<'a>)> for Struct<'a> {
     }
 }
 
-impl<'a> TryFrom<&'a syn::Field> for Field<'a> {
+impl<'a> TryFrom<(&'a syn::Field, FieldConfig<'a>)> for Field<'a> {
     type Err = Error;
 
-    fn try_from(ast: &'a syn::Field) -> Result<Self> {
+    fn try_from((ast, config): (&'a syn::Field, FieldConfig<'a>))
+        -> Result<Self> {
+        let ident = ast.ident.as_ref().unwrap();
         Ok(Field {
             ast: ast,
-            ident: ast.ident.as_ref().unwrap(),
+            ident: ident,
+            attribute: config.attribute.unwrap_or(ident.as_ref()),
             ty: (&ast.ty).try_into()
                 .chain_err(|| ErrorKind::Field(ast.clone()))?,
         })
