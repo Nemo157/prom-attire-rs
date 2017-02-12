@@ -1,9 +1,12 @@
 extern crate proc_macro;
 extern crate syn;
+extern crate error_chain;
 
 #[macro_use]
 extern crate prom_attire_bootstrap;
 extern crate prom_attire_impl;
+
+use error_chain::ChainedError;
 
 #[derive(PromAttireBootstrap)]
 struct Attributes<'a> {
@@ -41,7 +44,7 @@ pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let expanded = match prom_attire_impl::derive(&input, config) {
         Ok(expanded) => expanded,
         Err(err) => {
-            println!("{}", err);
+            println!("{}", err.display());
             panic!("Expanding prom-attire failed");
         }
     };

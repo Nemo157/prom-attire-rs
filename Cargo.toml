@@ -10,6 +10,7 @@ proc-macro = true
 members = ["prom-attire-bootstrap", "prom-attire-impl"]
 
 [dependencies]
+error-chain = "0.8.1"
 syn = "0.11.4"
 prom-attire-bootstrap = { path = "prom-attire-bootstrap" }
 prom-attire-impl = { path = "prom-attire-impl" }
