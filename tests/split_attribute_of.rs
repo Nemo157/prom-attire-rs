@@ -24,6 +24,25 @@ fn split_attribute_of_parent() {
 }
 
 #[test]
+fn split_attribute_of_parent_moving() {
+    #[derive(PromAttire)]
+    struct A {
+        #[attire(split_attribute_of = "b")]
+        c: Option<String>,
+        #[attire(split_attribute_of = "b")]
+        d: Option<String>,
+    }
+    let input = quote! {
+        #[b = "b"]
+        struct S {}
+    };
+    let ast = syn::parse_derive_input(input.as_str()).unwrap();
+    let attrs = A::from(ast.attrs.as_slice());
+    assert_eq!(attrs.c, Some("b".to_owned()));
+    assert_eq!(attrs.d, Some("b".to_owned()));
+}
+
+#[test]
 fn split_attribute_of_children() {
     #[derive(PromAttire)]
     struct A<'a> {

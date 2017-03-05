@@ -281,6 +281,31 @@ fn match_field(ctx: &Context, field: &Field) -> Tokens {
     }
 }
 
+fn match_clone_write(field: &Field, ty: &Wrapper) -> Tokens {
+    let ident = &field.ident;
+    let value = match *ty.inner() {
+        Ty::Literal(_) => quote!(value),
+        Ty::Custom(_) => quote!(value.clone()),
+    };
+    match *ty {
+        Wrapper::Vec(_) => {
+            quote! {
+                #ident.push(#value);
+            }
+        }
+        Wrapper::Option(_) => {
+            quote! {
+                #ident = Some(#value);
+            }
+        }
+        Wrapper::None(_) => {
+            quote! {
+                #ident = #value;
+            }
+        }
+    }
+}
+
 fn match_split_fields(ctx: &Context, split: &SplitFields) -> Tokens {
     let parent = &split.parent;
     let error = match_error(ctx, split.ty.inner());
@@ -290,7 +315,7 @@ fn match_split_fields(ctx: &Context, split: &SplitFields) -> Tokens {
         .lit()
         .map(|lit| match_literal(ctx, split.ty.inner(), lit));
     let writes =
-        split.fields.iter().map(|field| match_write(field, &field.ty));
+        split.fields.iter().map(|field| match_clone_write(field, &field.ty));
     let matches = split.fields.iter().map(|field| match_field(ctx, field));
     quote! {
         ::syn::MetaItem::NameValue(ref ident, ref value)
