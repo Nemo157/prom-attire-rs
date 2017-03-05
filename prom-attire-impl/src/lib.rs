@@ -22,6 +22,16 @@ pub struct Config<'a> {
 
 pub struct FieldConfig<'a> {
     pub attribute: Option<&'a str>,
+    pub split_attribute_of: Option<&'a str>,
+}
+
+impl Default for FieldConfig<'static> {
+    fn default() -> FieldConfig<'static> {
+        FieldConfig {
+            attribute: None,
+            split_attribute_of: None,
+        }
+    }
 }
 
 pub fn derive(input: &str, config: Config) -> Result<String> {

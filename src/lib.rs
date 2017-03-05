@@ -17,6 +17,7 @@ struct Attributes<'a> {
 #[derive(PromAttireBootstrap)]
 struct FieldAttributes<'a> {
     attribute: Option<&'a str>,
+    split_attribute_of: Option<&'a str>,
 }
 
 #[proc_macro_derive(PromAttire, attributes(attire))]
@@ -56,6 +57,7 @@ pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             };
             prom_attire_impl::FieldConfig {
                 attribute: attrs.attribute,
+                split_attribute_of: attrs.split_attribute_of,
             }
         }
     };

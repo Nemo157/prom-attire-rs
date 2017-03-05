@@ -27,7 +27,7 @@ fn enuum() {
     let config = Config {
         scope: None,
         docs: None,
-        parse_field_config: &|_| FieldConfig { attribute: None },
+        parse_field_config: &|_| FieldConfig::default(),
     };
     let result = prom_attire_impl::derive(input.as_str(), config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::StructBody)
@@ -39,7 +39,7 @@ fn tuple_struct() {
     let config = Config {
         scope: None,
         docs: None,
-        parse_field_config: &|_| FieldConfig { attribute: None },
+        parse_field_config: &|_| FieldConfig::default(),
     };
     let result = prom_attire_impl::derive(input.as_str(), config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::StructBody)
@@ -55,7 +55,7 @@ fn bad_docs_type() {
     let config = Config {
         scope: None,
         docs: Some("docs"),
-        parse_field_config: &|_| FieldConfig { attribute: None },
+        parse_field_config: &|_| FieldConfig::default(),
     };
     let result = prom_attire_impl::derive(input.as_str(), config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::DocsTy(_))

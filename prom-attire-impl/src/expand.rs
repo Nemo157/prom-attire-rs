@@ -1,7 +1,7 @@
 use syn;
 use quote::{Tokens, ToTokens};
 
-use dissect::{Struct, Field, Wrapper, Ty, Lit};
+use dissect::{Struct, Field, SplitFields, Wrapper, Ty, Lit};
 use Config;
 
 struct Context<'a> {
@@ -281,6 +281,47 @@ fn match_field(ctx: &Context, field: &Field) -> Tokens {
     }
 }
 
+fn match_split_fields(ctx: &Context, split: &SplitFields) -> Tokens {
+    let parent = &split.parent;
+    let error = match_error(ctx, split.ty.inner());
+    let parse = match_parse(ctx, split.ty.inner());
+    let literal = split.ty
+        .inner()
+        .lit()
+        .map(|lit| match_literal(ctx, split.ty.inner(), lit));
+    let writes =
+        split.fields.iter().map(|field| match_write(field, &field.ty));
+    let matches = split.fields.iter().map(|field| match_field(ctx, field));
+    quote! {
+        ::syn::MetaItem::NameValue(ref ident, ref value)
+            if ident.as_ref() == #parent => {
+                let value = match *value {
+                    ::syn::Lit::Str(ref value, _) => {
+                        #parse
+                    }
+                    #literal
+                    #error
+                };
+                #(#writes)*
+            }
+        ::syn::MetaItem::List(ref ident, ref values)
+            if ident.as_ref() == #parent => {
+                for value in values {
+                    if let ::syn::NestedMetaItem::MetaItem(ref item) = *value {
+                        match *item {
+                            #(#matches)*
+                            ref item => {
+                                println!(
+                                    "Unexpected attribute under '{}' ({:?})",
+                                    #parent, item);
+                            }
+                        }
+                    }
+                }
+            }
+    }
+}
+
 fn match_loop<I: Iterator<Item = Tokens>>(
     ctx: &Context,
     matches: I
@@ -326,14 +367,21 @@ pub fn expand(strukt: &Struct, config: &Config) -> Tokens {
 
     let setup_fields = strukt.fields
         .iter()
+        .chain(strukt.split_fields.iter().flat_map(|split| &split.fields))
         .map(setup_field)
         .chain(strukt.docs.as_ref().map(setup_docs));
     let field_matches = strukt.fields
         .iter()
-        .map(|field| match_field(&ctx, field));
+        .map(|field| match_field(&ctx, field))
+        .chain(strukt.split_fields
+            .iter()
+            .map(|split| match_split_fields(&ctx, split)));
     let match_loop = match_loop(&ctx, field_matches);
-    let write_fields =
-        strukt.fields.iter().chain(&strukt.docs).map(write_field);
+    let write_fields = strukt.fields
+        .iter()
+        .chain(&strukt.docs)
+        .chain(strukt.split_fields.iter().flat_map(|split| &split.fields))
+        .map(write_field);
 
     let Context { ref strukt_ty,
                   ref error_ty,
@@ -448,7 +496,6 @@ pub fn expand(strukt: &Struct, config: &Config) -> Tokens {
         }
     }
 }
-
 
 impl<'a> ToTokens for Ty<'a> {
     fn to_tokens(&self, tokens: &mut Tokens) {

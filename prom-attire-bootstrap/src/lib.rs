@@ -11,6 +11,7 @@ pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         parse_field_config: &|_| {
             prom_attire_impl::FieldConfig {
                 attribute: None,
+                split_attribute_of: None,
             }
         }
     };

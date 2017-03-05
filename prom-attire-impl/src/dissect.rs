@@ -1,6 +1,9 @@
 //! Takes an input struct and extracts all the details necessary to generate
 //! the From<&[Attribute]> implementation
 
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+
 use syn;
 
 use errors::*;
@@ -13,6 +16,15 @@ pub struct Struct<'a> {
     pub docs: Option<Field<'a>>,
     pub lifetime: Option<&'a syn::Lifetime>,
     pub fields: Vec<Field<'a>>,
+    pub split_fields: Vec<SplitFields<'a>>,
+}
+
+#[derive(Debug)]
+pub struct SplitFields<'a> {
+    pub parent: &'a str,
+    pub ty: Wrapper<'a>,
+    pub syn_ty: &'a syn::Ty,
+    pub fields: Vec<Field<'a>>,
 }
 
 #[derive(Debug)]
@@ -23,14 +35,14 @@ pub struct Field<'a> {
     pub ty: Wrapper<'a>,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Wrapper<'a> {
     None(Ty<'a>),
     Option(Ty<'a>),
     Vec(Ty<'a>),
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Ty<'a> {
     Literal(Lit),
     Custom(&'a syn::Ty),
@@ -51,7 +63,7 @@ impl<'a> TryFrom<(&'a syn::DeriveInput, &'a Config<'a>)> for Struct<'a> {
 
     fn try_from((ast, config): (&'a syn::DeriveInput, &'a Config<'a>))
         -> Result<Self> {
-        let fields = match ast.body {
+        let syn_fields = match ast.body {
             syn::Body::Struct(syn::VariantData::Struct(ref fields)) => fields,
             _ => bail!(ErrorKind::StructBody),
         };
@@ -71,7 +83,7 @@ impl<'a> TryFrom<(&'a syn::DeriveInput, &'a Config<'a>)> for Struct<'a> {
             .map(|l| &l.lifetime);
 
         let docs_field = config.docs.and_then(|docs| {
-            fields.iter()
+            syn_fields.iter()
                 .find(|field| field.ident.as_ref().unwrap().as_ref() == docs)
         });
 
@@ -90,22 +102,48 @@ impl<'a> TryFrom<(&'a syn::DeriveInput, &'a Config<'a>)> for Struct<'a> {
             None => None,
         };
 
-        let fields = fields.iter()
-            .filter(|field| {
-                Some(field.ident.as_ref().unwrap().as_ref()) != config.docs
-            })
-            .map(|field| {
-                let config = (config.parse_field_config)(field.attrs
-                    .as_slice());
-                (field, config).try_into()
-            })
-            .collect::<Result<_>>()?;
+        let mut fields = Vec::with_capacity(syn_fields.len());
+        let mut split_fields = HashMap::new();
+
+        let parse_field_config = &config.parse_field_config;
+
+        for syn_field in syn_fields {
+            if Some(syn_field.ident.as_ref().unwrap().as_ref()) ==
+               config.docs {
+                continue;
+            }
+            let field_config = parse_field_config(syn_field.attrs.as_slice());
+            match field_config.split_attribute_of {
+                None => fields.push((syn_field, field_config).try_into()?),
+                Some(parent) => {
+                    let field: Field = (syn_field, field_config).try_into()?;
+                    match split_fields.entry(parent) {
+                        Entry::Occupied(mut entry) => {
+                            let split: &mut SplitFields = entry.get_mut();
+                            if split.ty != field.ty {
+                                bail!(ErrorKind::SplitFieldTys(split.parent.to_owned(), split.syn_ty.clone(), syn_field.clone()));
+                            }
+                            split.fields.push(field);
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(SplitFields {
+                                parent: parent,
+                                ty: field.ty.clone(),
+                                syn_ty: &syn_field.ty,
+                                fields: vec![field],
+                            });
+                        }
+                    }
+                }
+            }
+        }
 
         Ok(Struct {
             ast: ast,
             docs: docs,
             lifetime: lifetime,
             fields: fields,
+            split_fields: split_fields.into_iter().map(|(_, v)| v).collect(),
         })
     }
 }
@@ -132,19 +170,22 @@ impl<'a> TryFrom<&'a syn::Ty> for Wrapper<'a> {
     fn try_from(ty: &'a syn::Ty) -> Result<Self> {
         let path = match *ty {
             syn::Ty::Path(None, ref path) => path,
-            _ => bail!(ErrorKind::Ty),
+            _ => bail!(ErrorKind::TyWrapper(ty.clone())),
         };
 
         if path.global || path.segments.len() != 1 {
-            bail!(ErrorKind::Ty);
+            bail!(ErrorKind::TyWrapper(ty.clone()));
         }
 
         let segment = &path.segments[0];
         Ok(match segment.ident.as_ref() {
-            "Option" => Wrapper::Option((&segment.parameters).try_into()?),
-            "Vec" => Wrapper::Vec((&segment.parameters).try_into()?),
+            "Option" => Wrapper::Option(ty_try_from_option_or_vec(&segment.parameters, &ty)?),
+            "Vec" => {
+                Wrapper::Vec(ty_try_from_option_or_vec(&segment.parameters,
+                                                       &ty)?)
+            }
             "bool" => Wrapper::None(Ty::Literal(Lit::Bool)),
-            _ => bail!(ErrorKind::Ty),
+            _ => bail!(ErrorKind::TyWrapper(ty.clone())),
         })
     }
 }
@@ -159,25 +200,25 @@ impl<'a> Wrapper<'a> {
     }
 }
 
-impl<'a> TryFrom<&'a syn::PathParameters> for Ty<'a> {
-    type Err = Error;
+fn ty_try_from_option_or_vec<'a>(
+    p: &'a syn::PathParameters,
+    ty: &'a syn::Ty
+) -> Result<Ty<'a>> {
+    let data = if let syn::PathParameters::AngleBracketed(ref data) = *p {
+        data
+    } else {
+        bail!(ErrorKind::TyWrapper(ty.clone()));
+    };
 
-    fn try_from(p: &'a syn::PathParameters) -> Result<Self> {
-        let data = match *p {
-            syn::PathParameters::AngleBracketed(ref data) => data,
-            syn::PathParameters::Parenthesized(_) => bail!(ErrorKind::Ty),
-        };
-
-        if !data.lifetimes.is_empty() || !data.bindings.is_empty() {
-            bail!(ErrorKind::Ty);
-        }
-
-        if data.types.len() != 1 {
-            bail!(ErrorKind::Ty);
-        }
-
-        (&data.types[0]).try_into()
+    if !data.lifetimes.is_empty() || !data.bindings.is_empty() {
+        bail!(ErrorKind::TyWrapper(ty.clone()));
     }
+
+    if data.types.len() != 1 {
+        bail!(ErrorKind::TyWrapper(ty.clone()));
+    }
+
+    (&data.types[0]).try_into()
 }
 
 impl<'a> TryFrom<&'a syn::Ty> for Ty<'a> {
@@ -187,7 +228,7 @@ impl<'a> TryFrom<&'a syn::Ty> for Ty<'a> {
         Ok(match *ty {
             syn::Ty::Path(None, ref path) => {
                 if path.segments.is_empty() {
-                    bail!(ErrorKind::Ty);
+                    bail!(ErrorKind::Ty(ty.clone()));
                 }
 
                 match path.segments[0].ident.as_ref() {
@@ -210,17 +251,17 @@ impl<'a> TryFrom<&'a syn::Ty> for Ty<'a> {
             }
             syn::Ty::Rptr(_, ref ty) => {
                 if ty.mutability != syn::Mutability::Immutable {
-                    bail!(ErrorKind::Ty);
+                    bail!(ErrorKind::TyRef(ty.ty.clone()));
                 }
                 if ty.ty == syn::parse_type("str").unwrap() {
                     Ty::Literal(Lit::Str)
                 } else if ty.ty == syn::parse_type("[u8]").unwrap() {
                     Ty::Literal(Lit::ByteStr)
                 } else {
-                    bail!(ErrorKind::Ty)
+                    bail!(ErrorKind::TyRef(ty.ty.clone()))
                 }
             }
-            _ => bail!(ErrorKind::Ty),
+            _ => bail!(ErrorKind::Ty(ty.clone())),
         })
     }
 }
