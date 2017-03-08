@@ -10,14 +10,22 @@ use error_chain::ChainedError;
 
 #[derive(PromAttireBootstrap)]
 struct Attributes<'a> {
+    #[attire_bootstrap(scope)]
     scope: Option<&'a str>,
+    #[attire_bootstrap(docs)]
     docs: Option<&'a str>,
 }
 
 #[derive(PromAttireBootstrap)]
 struct FieldAttributes<'a> {
+    #[attire_bootstrap(field_attribute)]
     attribute: Option<&'a str>,
+    #[attire_bootstrap(field_split_attribute_of)]
     split_attribute_of: Option<&'a str>,
+    #[attire_bootstrap(field_default)]
+    default: prom_attire_impl::Defaulted,
+    #[attire_bootstrap(field_flag_value)]
+    flag_value: Option<&'a str>,
 }
 
 #[proc_macro_derive(PromAttire, attributes(attire))]
@@ -58,6 +66,8 @@ pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             prom_attire_impl::FieldConfig {
                 attribute: attrs.attribute,
                 split_attribute_of: attrs.split_attribute_of,
+                default: attrs.default,
+                flag_value: attrs.flag_value,
             }
         }
     };

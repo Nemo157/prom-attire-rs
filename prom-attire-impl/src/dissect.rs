@@ -8,7 +8,7 @@ use syn;
 
 use errors::*;
 use tmp::{TryFrom, TryInto};
-use {Config, FieldConfig};
+use {Config, FieldConfig, Defaulted};
 
 #[derive(Debug)]
 pub struct Struct<'a> {
@@ -32,6 +32,8 @@ pub struct Field<'a> {
     pub ast: &'a syn::Field,
     pub ident: &'a syn::Ident,
     pub attribute: &'a str,
+    pub default: Defaulted,
+    pub flag_value: Option<&'a str>,
     pub ty: Wrapper<'a>,
 }
 
@@ -154,12 +156,36 @@ impl<'a> TryFrom<(&'a syn::Field, FieldConfig<'a>)> for Field<'a> {
     fn try_from((ast, config): (&'a syn::Field, FieldConfig<'a>))
         -> Result<Self> {
         let ident = ast.ident.as_ref().unwrap();
+        let ty = (&ast.ty).try_into()
+                .chain_err(|| ErrorKind::Field(ast.clone()))?;
+
+        let default = match (&ty, config.default) {
+            (&Wrapper::None(Ty::Literal(Lit::Bool)), Defaulted::Nope)
+                => Defaulted::Yep,
+            (&Wrapper::None(_), Defaulted::Nope)
+                => Err(Error::from_kind(ErrorKind::TyWrapperOrDefault(ast.ty.clone()))).chain_err(|| ErrorKind::Field(ast.clone()))?,
+            (_, default)
+                => default,
+        };
+
+        let flag_value = match (&ty, &default, config.flag_value) {
+            (&Wrapper::None(Ty::Literal(Lit::Bool)), _, None)
+                => Some("true"),
+            (&Wrapper::Option(Ty::Literal(Lit::Bool)), _, None)
+                => Some("true"),
+            (_, &Defaulted::Nope, Some(_))
+                => Err(Error::from_kind(ErrorKind::WordValueNoDefault)).chain_err(|| ErrorKind::Field(ast.clone()))?,
+            (_, _, flag_value)
+                => flag_value,
+        };
+
         Ok(Field {
             ast: ast,
             ident: ident,
             attribute: config.attribute.unwrap_or(ident.as_ref()),
-            ty: (&ast.ty).try_into()
-                .chain_err(|| ErrorKind::Field(ast.clone()))?,
+            default: default,
+            flag_value: flag_value,
+            ty: ty,
         })
     }
 }
@@ -168,25 +194,20 @@ impl<'a> TryFrom<&'a syn::Ty> for Wrapper<'a> {
     type Err = Error;
 
     fn try_from(ty: &'a syn::Ty) -> Result<Self> {
-        let path = match *ty {
-            syn::Ty::Path(None, ref path) => path,
-            _ => bail!(ErrorKind::TyWrapper(ty.clone())),
-        };
-
-        if path.global || path.segments.len() != 1 {
-            bail!(ErrorKind::TyWrapper(ty.clone()));
-        }
-
-        let segment = &path.segments[0];
-        Ok(match segment.ident.as_ref() {
-            "Option" => Wrapper::Option(ty_try_from_option_or_vec(&segment.parameters, &ty)?),
-            "Vec" => {
-                Wrapper::Vec(ty_try_from_option_or_vec(&segment.parameters,
-                                                       &ty)?)
+        if let syn::Ty::Path(None, ref path) = *ty {
+            if !path.global && path.segments.len() == 1 {
+                let segment = &path.segments[0];
+                if segment.ident.as_ref() == "Option" || segment.ident.as_ref() == "Vec" {
+                    let inner = ty_try_from_option_or_vec(&segment.parameters, &ty)?;
+                    return match segment.ident.as_ref() {
+                        "Option" => Ok(Wrapper::Option(inner)),
+                        "Vec" => Ok(Wrapper::Vec(inner)),
+                        _ => unreachable!(),
+                    };
+                }
             }
-            "bool" => Wrapper::None(Ty::Literal(Lit::Bool)),
-            _ => bail!(ErrorKind::TyWrapper(ty.clone())),
-        })
+        }
+        Ok(Wrapper::None(ty.try_into()?))
     }
 }
 
@@ -207,15 +228,15 @@ fn ty_try_from_option_or_vec<'a>(
     let data = if let syn::PathParameters::AngleBracketed(ref data) = *p {
         data
     } else {
-        bail!(ErrorKind::TyWrapper(ty.clone()));
+        bail!(ErrorKind::TyWrapperBad(ty.clone()));
     };
 
     if !data.lifetimes.is_empty() || !data.bindings.is_empty() {
-        bail!(ErrorKind::TyWrapper(ty.clone()));
+        bail!(ErrorKind::TyWrapperBad(ty.clone()));
     }
 
     if data.types.len() != 1 {
-        bail!(ErrorKind::TyWrapper(ty.clone()));
+        bail!(ErrorKind::TyWrapperBad(ty.clone()));
     }
 
     (&data.types[0]).try_into()

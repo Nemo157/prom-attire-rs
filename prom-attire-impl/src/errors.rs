@@ -41,14 +41,23 @@ error_chain! {
             display("field `{}` had an error", field.ident.as_ref().unwrap())
         }
 
+        WordValueNoDefault {
+            description("if a `flag_value` is specified a `default` must also be specified")
+        }
+
         Ty(ty: syn::Ty) {
             description("unsupported type")
             display("type `{}` is not supported", Q(&ty))
         }
 
-        TyWrapper(ty: syn::Ty) {
-            description("unsupported type wrapper")
-            display("type `{}` is not supported, it must be enclosed in a `Vec` or `Option`", Q(&ty))
+        TyWrapperOrDefault(ty: syn::Ty) {
+            description("unsupported unwrapped type")
+            display("unwrapped type `{}` without a default is not supported, it must be enclosed in a `Vec` or `Option` or have a `default` specified", Q(&ty))
+        }
+
+        TyWrapperBad(ty: syn::Ty) {
+            description("invalid Option/Vec type wrapper")
+            display("type `{}` is not supported, it appears to be a `Vec` or `Option` but could not be parsed", Q(&ty))
         }
 
         TyRef(ty: syn::Ty) {

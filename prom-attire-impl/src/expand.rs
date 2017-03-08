@@ -2,7 +2,7 @@ use syn;
 use quote::{Tokens, ToTokens};
 
 use dissect::{Struct, Field, SplitFields, Wrapper, Ty, Lit};
-use Config;
+use {Config, Defaulted};
 
 struct Context<'a> {
     config: &'a Config<'a>,
@@ -80,12 +80,21 @@ fn setup_field(field: &Field) -> Tokens {
                 let mut #ident = None;
             }
         }
-        Wrapper::None(Ty::Literal(Lit::Bool)) => {
-            quote! {
-                let mut #ident = false;
+        Wrapper::None(ref ty) => {
+            match field.default {
+                Defaulted::Yep => {
+                    quote! {
+                        let mut #ident = <#ty as ::std::default::Default>::default();
+                    }
+                },
+                Defaulted::To(ref value) => {
+                    quote! {
+                        let mut #ident = <#ty as ::std::str::FromStr>::from_str(#value).unwrap();
+                    }
+                },
+                Defaulted::Nope => unreachable!(),
             }
         }
-        _ => unreachable!(),
     }
 }
 
@@ -217,9 +226,9 @@ fn match_literal(ctx: &Context, ty: &Ty, lit: Lit) -> Tokens {
     }
 }
 
-fn match_write(field: &Field, ty: &Wrapper) -> Tokens {
+fn match_write(field: &Field) -> Tokens {
     let ident = &field.ident;
-    match *ty {
+    match field.ty {
         Wrapper::Vec(_) => {
             quote! {
                 #ident.push(value);
@@ -238,15 +247,16 @@ fn match_write(field: &Field, ty: &Wrapper) -> Tokens {
     }
 }
 
-fn match_special(field: &Field, ty: &Wrapper) -> Tokens {
-    let attribute = &field.attribute;
-    let write = match_write(field, ty);
-    match *ty.inner() {
-        Ty::Literal(Lit::Bool) => {
+fn match_special(field: &Field) -> Tokens {
+    match field.flag_value {
+        Some(ref value) => {
+            let attribute = &field.attribute;
+            let write = match_write(field);
+            let ty = field.ty.inner();
             quote! {
                 ::syn::MetaItem::Word(ref ident)
                     if ident.as_ref() == #attribute => {
-                        let value = true;
+                        let value = <#ty as ::std::str::FromStr>::from_str(#value).unwrap();
                         #write
                     }
             }
@@ -263,8 +273,8 @@ fn match_field(ctx: &Context, field: &Field) -> Tokens {
         .inner()
         .lit()
         .map(|lit| match_literal(ctx, field.ty.inner(), lit));
-    let write = match_write(field, &field.ty);
-    let special = match_special(field, &field.ty);
+    let write = match_write(field);
+    let special = match_special(field);
     quote! {
         ::syn::MetaItem::NameValue(ref ident, ref value)
             if ident.as_ref() == #attribute => {
