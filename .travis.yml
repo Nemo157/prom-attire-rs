@@ -25,12 +25,12 @@ script:
       cd ./prom-attire-impl; cargo clippy -- -D warnings; cd ..;
     esac
 
-before_deploy:
-  - cargo package
-
 deploy:
   provider: script
-  script: cargo publish --verbose --token "$CRATES_IO_TOKEN"
+  script:
+    - cd ./prom-attire-impl; cargo publish --token "$CRATES_IO_TOKEN"; cd ..
+    - cd ./prom-attire-bootstrap; cargo publish --token "$CRATES_IO_TOKEN"; cd ..
+    - cargo publish --token "$CRATES_IO_TOKEN"
   skip_cleanup: true
   on:
     tags: true
