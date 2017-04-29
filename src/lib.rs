@@ -35,6 +35,11 @@
 //! # foo().unwrap()
 //! # }
 //! ```
+//!
+//! More examples **Coming Soon**, for now if you check [the list of examples
+//! to add](https://github.com/Nemo157/prom-attire-rs/issues/5) and [look at
+//! the tests](https://github.com/Nemo157/prom-attire-rs/tree/master/tests) you
+//! may be able to work out how to do what you want.
 
 
 extern crate proc_macro;
