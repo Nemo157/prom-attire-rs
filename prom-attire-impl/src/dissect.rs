@@ -170,8 +170,7 @@ impl<'a> TryFrom<(&'a syn::Field, FieldConfig<'a>)> for Field<'a> {
 
         let flag_value = match (&ty, &default, config.flag_value) {
             (&Wrapper::None(Ty::Literal(Lit::Bool)), _, None)
-                => Some("true"),
-            (&Wrapper::Option(Ty::Literal(Lit::Bool)), _, None)
+            | (&Wrapper::Option(Ty::Literal(Lit::Bool)), _, None)
                 => Some("true"),
             (_, &Defaulted::Nope, Some(_))
                 => Err(Error::from_kind(ErrorKind::WordValueNoDefault)).chain_err(|| ErrorKind::Field(ast.clone()))?,
@@ -182,7 +181,7 @@ impl<'a> TryFrom<(&'a syn::Field, FieldConfig<'a>)> for Field<'a> {
         Ok(Field {
             ast: ast,
             ident: ident,
-            attribute: config.attribute.unwrap_or(ident.as_ref()),
+            attribute: config.attribute.unwrap_or_else(|| ident.as_ref()),
             default: default,
             flag_value: flag_value,
             ty: ty,
@@ -198,7 +197,7 @@ impl<'a> TryFrom<&'a syn::Ty> for Wrapper<'a> {
             if !path.global && path.segments.len() == 1 {
                 let segment = &path.segments[0];
                 if segment.ident.as_ref() == "Option" || segment.ident.as_ref() == "Vec" {
-                    let inner = ty_try_from_option_or_vec(&segment.parameters, &ty)?;
+                    let inner = ty_try_from_option_or_vec(&segment.parameters, ty)?;
                     return match segment.ident.as_ref() {
                         "Option" => Ok(Wrapper::Option(inner)),
                         "Vec" => Ok(Wrapper::Vec(inner)),
@@ -214,9 +213,9 @@ impl<'a> TryFrom<&'a syn::Ty> for Wrapper<'a> {
 impl<'a> Wrapper<'a> {
     pub fn inner(&self) -> &Ty<'a> {
         match *self {
-            Wrapper::None(ref ty) => ty,
-            Wrapper::Option(ref ty) => ty,
-            Wrapper::Vec(ref ty) => ty,
+            Wrapper::None(ref ty)
+            | Wrapper::Option(ref ty)
+            | Wrapper::Vec(ref ty) => ty,
         }
     }
 }

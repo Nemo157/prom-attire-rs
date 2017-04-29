@@ -43,7 +43,7 @@ pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         }
     };
 
-    let expanded = match prom_attire_impl::derive(input, config) {
+    let expanded = match prom_attire_impl::derive(input, &config) {
         Ok(expanded) => expanded,
         Err(err) => {
             println!("{}", err.display());

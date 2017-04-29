@@ -9,8 +9,8 @@ use prom_attire_impl::{Config, FieldConfig, ErrorKind};
 macro_rules! assert_error_kind {
     ($err:expr, $kind:pat) => {{
         let err = $err;
-        match err.kind() {
-            &$kind => (),
+        match *err.kind() {
+            $kind => (),
             _ => {
                 panic!(
                     "expected error of kind {}, got: {:?}",
@@ -29,7 +29,7 @@ fn enuum() {
         docs: None,
         parse_field_config: &|_| FieldConfig::default(),
     };
-    let result = prom_attire_impl::derive(input.as_str(), config);
+    let result = prom_attire_impl::derive(input.as_str(), &config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::StructBody)
 }
 
@@ -41,7 +41,7 @@ fn tuple_struct() {
         docs: None,
         parse_field_config: &|_| FieldConfig::default(),
     };
-    let result = prom_attire_impl::derive(input.as_str(), config);
+    let result = prom_attire_impl::derive(input.as_str(), &config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::StructBody)
 }
 
@@ -57,6 +57,6 @@ fn bad_docs_type() {
         docs: Some("docs"),
         parse_field_config: &|_| FieldConfig::default(),
     };
-    let result = prom_attire_impl::derive(input.as_str(), config);
+    let result = prom_attire_impl::derive(input.as_str(), &config);
     assert_error_kind!(result.unwrap_err(), ErrorKind::DocsTy(_))
 }

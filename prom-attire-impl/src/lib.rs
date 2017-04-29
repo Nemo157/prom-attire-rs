@@ -1,4 +1,5 @@
 #![recursion_limit = "128"]
+#![allow(unknown_lints)] // For clippy
 
 #[macro_use]
 extern crate error_chain;
@@ -50,10 +51,10 @@ impl Default for FieldConfig<'static> {
     }
 }
 
-pub fn derive(input: &str, config: Config) -> Result<String> {
+pub fn derive(input: &str, config: &Config) -> Result<String> {
     let ast = syn::parse_derive_input(input)?;
-    let strukt = (&ast, &config).try_into()?;
-    let expanded = expand::expand(&strukt, &config);
+    let strukt = (&ast, config).try_into()?;
+    let expanded = expand::expand(&strukt, config);
     Ok(expanded.to_string())
 }
 

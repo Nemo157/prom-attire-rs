@@ -1,4 +1,4 @@
-/// TODO: Replace with std::convert::TryFrom once stabilized
+/// TODO: Replace with `std::convert::TryFrom` once stabilized
 pub trait TryFrom<T>: Sized {
     /// The type returned in the event of a conversion error.
     type Err;
@@ -7,7 +7,7 @@ pub trait TryFrom<T>: Sized {
     fn try_from(T) -> Result<Self, Self::Err>;
 }
 
-/// TODO: Replace with std::convert::TryInto once stabilized
+/// TODO: Replace with `std::convert::TryInto` once stabilized
 pub trait TryInto<T>: Sized {
     /// The type returned in the event of a conversion error.
     type Err;

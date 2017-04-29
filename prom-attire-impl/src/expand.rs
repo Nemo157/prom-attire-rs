@@ -34,7 +34,7 @@ impl<'a> Context<'a> {
             life_bound: life_bound,
             opt_life_bound: opt_life_bound,
             scope_lit: match config.scope {
-                Some(ref scope) => quote!(Some(#scope)),
+                Some(scope) => quote!(Some(#scope)),
                 None => quote!(None),
             },
             error_ty: syn::Ident::new(strukt.ast.ident.as_ref().to_string() +
@@ -249,7 +249,7 @@ fn match_write(field: &Field) -> Tokens {
 
 fn match_special(field: &Field) -> Tokens {
     match field.flag_value {
-        Some(ref value) => {
+        Some(value) => {
             let attribute = &field.attribute;
             let write = match_write(field);
             let ty = field.ty.inner();
@@ -418,7 +418,7 @@ pub fn expand(strukt: &Struct, config: &Config) -> Tokens {
         .chain(strukt.split_fields.iter().flat_map(|split| &split.fields))
         .map(write_field);
 
-    let Context { ref strukt_ty,
+    let Context { strukt_ty,
                   ref error_ty,
                   ref life,
                   ref life_bound,
@@ -541,7 +541,7 @@ impl<'a> ToTokens for Ty<'a> {
             Ty::Literal(Lit::Str) => tokens.append("str"),
             Ty::Literal(Lit::ByteStr) => tokens.append("bytestr"),
             Ty::Literal(Lit::Float(ty)) => tokens.append(&ty.to_string()),
-            Ty::Custom(ref ty) => ty.to_tokens(tokens),
+            Ty::Custom(ty) => ty.to_tokens(tokens),
         }
     }
 }
