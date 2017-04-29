@@ -1,4 +1,4 @@
-# prom-attire
+# prom-attire [![travis-badge][]][travis] [![cargo-badge][]][cargo] [![license-badge][]][license] [![rust-version-badge][]][rust-version]
 
 **Pro**cedural **M**acro **Attri**but**e**s
 
@@ -67,3 +67,14 @@ at your option.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you shall be dual licensed as above, without any
 additional terms or conditions.
+
+[travis-badge]: https://img.shields.io/travis/Nemo157/prom-attire-rs/master.svg?style=flat-square
+[travis]: https://travis-ci.org/Nemo157/prom-attire-rs
+[cargo-badge]: https://img.shields.io/crates/v/prom-attire.svg?style=flat-square
+[cargo]: https://crates.io/crates/prom-attire
+[license-badge]: https://img.shields.io/badge/license-MIT/Apache--2.0-lightgray.svg?style=flat-square
+[license]: #license
+[rust-version-badge]: https://img.shields.io/badge/rust-1.15+-blue.svg?style=flat-square
+[rust-version]: .travis.yml#L5
+
+[clippy]: https://github.com/Manishearth/rust-clippy
