@@ -25,8 +25,8 @@ members = ["prom-attire-bootstrap", "prom-attire-impl"]
 [dependencies]
 error-chain = "0.8.1"
 syn = "0.11.4"
-prom-attire-bootstrap = { path = "prom-attire-bootstrap" }
-prom-attire-impl = { path = "prom-attire-impl" }
+prom-attire-bootstrap = { version = "0.1.0", path = "prom-attire-bootstrap" }
+prom-attire-impl = { version = "0.1.0", path = "prom-attire-impl" }
 
 [dev_dependencies]
 quote = "0.3.12"
