@@ -1,3 +1,32 @@
+//! <center>
+//!   <b>Pro</b>cedural <b>M</b>acro <b>Attri</b>but<b>e</b>s
+//!   <br>
+//!   For when you need the best dressed procedural macro.
+//! </center>
+//!
+//! `prom_attire` lets you define a struct (or multiple) that you can use to
+//! parse the attributes passed in to your procedural macro.
+//!
+//! # Examples
+//!
+//! ## Basic example
+//!
+// TODO: For some reason this isn't being picked up as a doctest...
+//! ```rust
+//! #[derive(PromAttire, PartialEq, Debug)]
+//! struct Attributes {
+//!     awesome: Option<&'a str>,
+//! }
+//! let ast = syn::parse_derive_input("
+//!     #[awesome = \"yes\"]
+//!     struct Foo {}
+//! ");
+//! let attrs = Attributes::from(ast.attrs.as_slice());
+//! assert_eq!(attrs, Attributes {
+//!     awesome: Some("yes"),
+//! })
+//! ```
+
 extern crate proc_macro;
 extern crate syn;
 extern crate error_chain;
@@ -28,6 +57,7 @@ struct FieldAttributes<'a> {
     flag_value: Option<&'a str>,
 }
 
+/// The procedural macro implementing `#[derive(PromAttire)]`
 #[proc_macro_derive(PromAttire, attributes(attire))]
 pub fn app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = input.to_string();
