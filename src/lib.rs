@@ -11,21 +11,31 @@
 //!
 //! ## Basic example
 //!
-// TODO: For some reason this isn't being picked up as a doctest...
 //! ```rust
+//! # #[macro_use] extern crate prom_attire;
+//! # extern crate syn;
+//! # fn main() {
+//! # fn foo() -> Result<(), String> {
 //! #[derive(PromAttire, PartialEq, Debug)]
-//! struct Attributes {
+//! struct Attributes<'a> {
 //!     awesome: Option<&'a str>,
 //! }
+// TODO: rustdoc has issues with raw string literals, switch to those once
+// fixed (extra TODO, open rust-lang/rust bug ticket about them and link)
 //! let ast = syn::parse_derive_input("
 //!     #[awesome = \"yes\"]
 //!     struct Foo {}
-//! ");
+//! ")?;
 //! let attrs = Attributes::from(ast.attrs.as_slice());
 //! assert_eq!(attrs, Attributes {
 //!     awesome: Some("yes"),
-//! })
+//! });
+//! # Ok(())
+//! # }
+//! # foo().unwrap()
+//! # }
 //! ```
+
 
 extern crate proc_macro;
 extern crate syn;
