@@ -3,6 +3,17 @@ name = "prom-attire-bootstrap"
 version = "0.1.0"
 authors = ["Wim Looman <wim@nemo157.com>"]
 
+description = """
+Procedural Macro Bootstrap (prom-attire-bootstrap) for a Procedural Macro
+(prom-attire) for Procedural Macros (yours!) to parse attributes (your users!)
+
+This is an internal dependency of prom-attire, you should not need to depend on
+it directly.
+"""
+
+repository = "https://github.com/Nemo157/prom-attire-rs"
+license = "MIT/Apache-2.0"
+
 [lib]
 proc-macro = true
 
