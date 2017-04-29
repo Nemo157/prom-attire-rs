@@ -1,0 +1,38 @@
+language: rust
+sudo: false
+cache: cargo
+rust:
+  - 1.15.0
+  - stable
+  - beta
+  - nightly-2017-04-28
+
+env:
+  global:
+    - CLIPPY_VERSION=0.0.128
+    - secure: "skv0w4yK+RDI8eFK+YZq5/S6OV34uz19H5DzTaShB6f3Q+2H7gJFN+WrhcFRC6E/yLAdymcajkhJQSkTQbT26XuvCQhR3mTmDDBEX/JP1hI4e3zDC6z/afBByi6+Swc87kCM8nV39wal+i+AMTgViL0GprP4VkfiCkcTkcLcype7XAJU4i3GyVu2hlDD9eRGK/CDmkXWs31IIpThEbPNcsQ5qlOnc4iTGYo6oWENErMR8wsV/UmXEXR+hV2HS4W3Pc6fOWNilva/mRKSxsEw28aiORv2ja4KtRIkIxhcEfXKX8QuceJ/TDU0a3MngUdyL6pxuQ6BIl/AHDa2kIsXA2Iz9h4MBUioN4h35YhJ1SpW1sEc66TsYlTnY5fJ2MlUNqa/Qkpfy6ThWFTCcqsUMh7TYGsWvEysWOEFQqE2GtWtxHiu1K/HEuJAOjWZqMwxiIQbfJXr1d3t9zGmizcX/kH00QVFWPEm3NL5i7bubS8SVgEdg4BhZy49Wk+ir2GKhOR1gzF0JF9g4Katqmk0UvbPNrQMuApCYKV6on17q2ZJ+z3VgkybEo7nojut6TNKcaWtS5PTCH/cAMIYvhQvdwWT31MzYgyn7zaIAALeHK70J8XQz6AGNJBT3KEVT5lpdiByGxzwyZg6iO1ff2CXfeUWJ0DhJkR2Qn0Owa+MSVQ="
+
+before_script:
+  - case "$TRAVIS_RUST_VERSION" in nightly*)
+      cargo install clippy --vers $CLIPPY_VERSION --force;
+    esac
+
+script:
+  - cargo test --all
+  - case "$TRAVIS_RUST_VERSION" in nightly*)
+      cargo clippy -- -D warnings;
+      cd ./prom-attire-bootstrap; cargo clippy -- -D warnings; cd ..;
+      cd ./prom-attire-impl; cargo clippy -- -D warnings; cd ..;
+    esac
+
+before_deploy:
+  - cargo package
+
+deploy:
+  provider: script
+  script: cargo publish --verbose --token "$CRATES_IO_TOKEN"
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true
+    condition: "$TRAVIS_RUST_VERSION = stable"

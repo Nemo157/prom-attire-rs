@@ -4,7 +4,19 @@
 
 For when you need the best dressed procedural macro.
 
-## Why Three Crates
+## Developing
+
+This project uses [clippy][] and denies warnings in CI builds. To ensure your
+changes will be accepted please check them with `cargo clippy` (available via
+`cargo install clippy` on nightly rust) before submitting a pull request (along
+with `cargo test` as usual).
+
+Both the nightly date and clippy version used in CI are pinned in the
+`.travis.yml` as clippy sometimes breaks for a few days after a new nightly is
+published, feel free to update to a new known good pair anytime as part of a
+pull request.
+
+### Why Three Crates
 
 Why not three crates?
 
