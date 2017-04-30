@@ -11,6 +11,10 @@
 
 //! ## Basic example
 //!
+//! The simplest example is taking in a string value for an attribute. Unless
+//! you use some of the customization shown later, you need to wrap all
+//! attributes in `Option` in case the user does not specify them.
+//!
 //! ```rust
 //! # #[macro_use] extern crate prom_attire;
 //! # extern crate syn;
@@ -120,6 +124,74 @@
 //! you feel would make the resulting messages nicer for your users. However
 //! they are (at least currently) exposed to the module in which your attribute
 //! struct is defined if you need to pull details from them.
+
+//! ## Lifetimes
+//!
+//! So far these examples have shown only examples of owned types. You can also
+//! use types that borrow from the provided AST by specifying a single lifetime
+//! on the struct. (Currently this only supports `&str` as `FromStr` does not
+//! support borrowing from the input, this may be extended in the future).
+//!
+//! ```rust
+//! # #[macro_use] extern crate prom_attire;
+//! # extern crate syn;
+//! # fn main() {
+//! # struct E;
+//! # impl ::std::fmt::Debug for E { fn fmt(&self, _: &mut ::std::fmt::Formatter) -> ::std::fmt::Result { Ok(()) } }
+//! # impl From<String> for E { fn from(_: String) -> E { E } }
+//! # impl<T> From<Vec<T>> for E { fn from(_: Vec<T>) -> E { E } }
+//! # fn foo() -> Result<(), E> {
+//! #[derive(PromAttire, PartialEq, Debug)]
+//! struct Attributes<'a> {
+//!     awesome: Option<&'a str>,
+//! }
+//! let ast = syn::parse_derive_input("
+//!     #[awesome = \"yes\"]
+//!     struct Foo {}
+//! ")?;
+//! let attrs = Attributes::try_from(ast.attrs.as_slice())?;
+//! assert_eq!(attrs, Attributes {
+//!     awesome: Some("yes"),
+//! });
+//! # Ok(())
+//! # }
+//! # foo().unwrap()
+//! # }
+//! ```
+
+//! ## Multiple Values
+//!
+//! If you wish to take in multiple values for an attribute, just wrap the
+//! attribute type in `Vec` instead of `Option`. Every instance of the
+//! attribute will be appended to the vector.
+//!
+//! ```rust
+//! # #[macro_use] extern crate prom_attire;
+//! # extern crate syn;
+//! # fn main() {
+//! # struct E;
+//! # impl ::std::fmt::Debug for E { fn fmt(&self, _: &mut ::std::fmt::Formatter) -> ::std::fmt::Result { Ok(()) } }
+//! # impl From<String> for E { fn from(_: String) -> E { E } }
+//! # impl<T> From<Vec<T>> for E { fn from(_: Vec<T>) -> E { E } }
+//! # fn foo() -> Result<(), E> {
+//! #[derive(PromAttire, PartialEq, Debug)]
+//! struct Attributes<'a> {
+//!     awesome: Vec<&'a str>,
+//! }
+//! let ast = syn::parse_derive_input("
+//!     #[awesome = \"yes\"]
+//!     #[awesome = \"always\"]
+//!     struct Foo {}
+//! ")?;
+//! let attrs = Attributes::try_from(ast.attrs.as_slice())?;
+//! assert_eq!(attrs, Attributes {
+//!     awesome: vec!["yes", "always"],
+//! });
+//! # Ok(())
+//! # }
+//! # foo().unwrap()
+//! # }
+//! ```
 
 //! ## More examples **Coming Soon**
 //!
