@@ -193,6 +193,79 @@
 //! # }
 //! ```
 
+//! ## Scoping
+//!
+//! Commonly you will want to namespace your attributes, this is used by
+//! `prom-attire` itself to keep all the configuration under a top-level
+//! `attire` attribute. To set the namespace just add an `#[attire(scope =
+//! "foo")]` attribute to the struct.
+//!
+//! ```rust
+//! # #[macro_use] extern crate prom_attire;
+//! # extern crate syn;
+//! # fn main() {
+//! # struct E;
+//! # impl ::std::fmt::Debug for E { fn fmt(&self, _: &mut ::std::fmt::Formatter) -> ::std::fmt::Result { Ok(()) } }
+//! # impl From<String> for E { fn from(_: String) -> E { E } }
+//! # impl<T> From<Vec<T>> for E { fn from(_: Vec<T>) -> E { E } }
+//! # fn foo() -> Result<(), E> {
+//! #[derive(PromAttire, PartialEq, Debug)]
+//! #[attire(scope = "you")]
+//! struct Attributes<'a> {
+//!     awesome: Option<&'a str>,
+//! }
+//! let ast = syn::parse_derive_input("
+//!     #[you(awesome = \"yes\")]
+//!     struct Foo {}
+//! ")?;
+//! let attrs = Attributes::try_from(ast.attrs.as_slice())?;
+//! assert_eq!(attrs, Attributes {
+//!     awesome: Some("yes"),
+//! });
+//! # Ok(())
+//! # }
+//! # foo().unwrap()
+//! # }
+//! ```
+
+//! ## Default
+//!
+//! Instead of having to check whether each attribute is `Some` useful value or
+//! using a default if it is `None` manually, you can tell `prom-attire` to
+//! inject a default value if not specified with an `#[attire(default =
+//! "foo")]` attribute on the field.
+//!
+//! ```rust
+//! # #[macro_use] extern crate prom_attire;
+//! # extern crate syn;
+//! # fn main() {
+//! # struct E;
+//! # impl ::std::fmt::Debug for E { fn fmt(&self, _: &mut ::std::fmt::Formatter) -> ::std::fmt::Result { Ok(()) } }
+//! # impl From<String> for E { fn from(_: String) -> E { E } }
+//! # impl<T> From<Vec<T>> for E { fn from(_: Vec<T>) -> E { E } }
+//! # fn foo() -> Result<(), E> {
+//! #[derive(PromAttire, PartialEq, Debug)]
+//! struct Attributes {
+//!     #[attire(default = "yes")]
+//!     awesome: String,
+//!     #[attire(default = "no")]
+//!     overridable: String,
+//! }
+//! let ast = syn::parse_derive_input("
+//!     #[overridable = \"yes!\"]
+//!     struct Foo {}
+//! ")?;
+//! let attrs = Attributes::try_from(ast.attrs.as_slice())?;
+//! assert_eq!(attrs, Attributes {
+//!     awesome: "yes".to_owned(),
+//!     overridable: "yes!".to_owned(),
+//! });
+//! # Ok(())
+//! # }
+//! # foo().unwrap()
+//! # }
+//! ```
+
 //! ## More examples **Coming Soon**
 //!
 //! For now if you check [the list of examples to
