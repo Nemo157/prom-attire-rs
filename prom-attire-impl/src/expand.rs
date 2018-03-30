@@ -454,7 +454,7 @@ pub fn expand(strukt: &Struct, config: &Config) -> Tokens {
         }
 
         impl#life_bound ::std::fmt::Display for #error_ty#life_bound {
-            fn fmt(&self, mut w: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+            fn fmt(&self, w: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 match *self {
                     #error_ty::LiteralTy { ref value, ref ty, ref scope, ref attr } => {
                         write!(
