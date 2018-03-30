@@ -13,6 +13,8 @@ categories = ["development-tools::procedural-macro-helpers"]
 
 license = "MIT/Apache-2.0"
 
+build = "build.rs"
+
 [badges]
 travis-ci = { repository = "Nemo157/prom-attire-rs" }
 
@@ -28,5 +30,8 @@ syn = "0.11.4"
 prom-attire-bootstrap = { version = "=0.1.0", path = "prom-attire-bootstrap" }
 prom-attire-impl = { version = "=0.1.0", path = "prom-attire-impl" }
 
-[dev_dependencies]
+[build-dependencies]
+rustc_version = "0.2.2"
+
+[dev-dependencies]
 quote = "0.3.12"

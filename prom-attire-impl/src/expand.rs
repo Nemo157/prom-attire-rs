@@ -148,8 +148,13 @@ fn match_parse(ctx: &Context, ty: &Ty) -> Tokens {
         }
 
         Ty::Literal(Lit::ByteStr) => {
+            let is_ascii = if cfg!(is_ascii_inherent) {
+                quote! { value.as_str().is_ascii() }
+            } else {
+                quote! { ::std::ascii::AsciiExt::is_ascii(value.as_str()) }
+            };
             quote! {
-                if ::std::ascii::AsciiExt::is_ascii(value.as_str()) {
+                if #is_ascii {
                     value.as_bytes()
                 } else {
                     errors.push(#error_ty::Parsing {
@@ -166,6 +171,7 @@ fn match_parse(ctx: &Context, ty: &Ty) -> Tokens {
 
         ref ty => {
             quote! {
+                #[allow(unreachable_code)]
                 match <#ty as ::std::str::FromStr>::from_str(value) {
                     Ok(value) => value,
                     Err(err) => {
@@ -174,7 +180,7 @@ fn match_parse(ctx: &Context, ty: &Ty) -> Tokens {
                             ty: stringify!(#ty),
                             scope: #scope_lit,
                             attr: ident.as_ref(),
-                            err: Box::new(err),
+                            err: Box::new(err) as _,
                         });
                         continue;
                     }
@@ -207,6 +213,7 @@ fn match_literal(ctx: &Context, ty: &Ty, lit: Lit) -> Tokens {
         Lit::Float(_) => {
             quote! {
                 ::syn::Lit::Float(ref value, _) => {
+                    #[allow(unreachable_code)]
                     match <#ty as ::std::str::FromStr>::from_str(value.as_str()) {
                         Ok(value) => value,
                         Err(err) => {
@@ -215,7 +222,7 @@ fn match_literal(ctx: &Context, ty: &Ty, lit: Lit) -> Tokens {
                                 ty: stringify!(#ty),
                                 scope: #scope_lit,
                                 attr: ident.as_ref(),
-                                err: Box::new(err),
+                                err: Box::new(err) as _,
                             });
                             continue;
                         }
@@ -454,7 +461,7 @@ pub fn expand(strukt: &Struct, config: &Config) -> Tokens {
         }
 
         impl#life_bound ::std::fmt::Display for #error_ty#life_bound {
-            fn fmt(&self, mut w: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+            fn fmt(&self, w: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 match *self {
                     #error_ty::LiteralTy { ref value, ref ty, ref scope, ref attr } => {
                         write!(
