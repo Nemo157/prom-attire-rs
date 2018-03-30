@@ -148,8 +148,13 @@ fn match_parse(ctx: &Context, ty: &Ty) -> Tokens {
         }
 
         Ty::Literal(Lit::ByteStr) => {
+            let is_ascii = if cfg!(is_ascii_inherent) {
+                quote! { value.as_str().is_ascii() }
+            } else {
+                quote! { ::std::ascii::AsciiExt::is_ascii(value.as_str()) }
+            };
             quote! {
-                if ::std::ascii::AsciiExt::is_ascii(value.as_str()) {
+                if #is_ascii {
                     value.as_bytes()
                 } else {
                     errors.push(#error_ty::Parsing {
