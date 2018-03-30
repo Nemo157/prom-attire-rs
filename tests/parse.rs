@@ -260,3 +260,28 @@ fn parse_from_str() {
     let attrs = A::from(ast.attrs.as_slice());
     assert_eq!(attrs.b, Some(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))));
 }
+
+#[test]
+#[cfg(never_type)]
+fn parse_from_infallible() {
+    use std::str::FromStr;
+    #[derive(Debug, Eq, PartialEq)]
+    struct Infallible(String);
+    impl FromStr for Infallible {
+        type Err = !;
+        fn from_str(s: &str) -> Result<Infallible, !> {
+            Ok(Infallible(s.to_owned()))
+        }
+    }
+    #[derive(PromAttire)]
+    struct A {
+        b: Option<Infallible>,
+    }
+    let input = quote! {
+        #[b = "boom"]
+        struct C {}
+    };
+    let ast = syn::parse_derive_input(input.as_str()).unwrap();
+    let attrs = A::from(ast.attrs.as_slice());
+    assert_eq!(attrs.b, Some(Infallible("boom".to_owned())));
+}
