@@ -171,6 +171,7 @@ fn match_parse(ctx: &Context, ty: &Ty) -> Tokens {
 
         ref ty => {
             quote! {
+                #[allow(unreachable_code)]
                 match <#ty as ::std::str::FromStr>::from_str(value) {
                     Ok(value) => value,
                     Err(err) => {
@@ -179,7 +180,7 @@ fn match_parse(ctx: &Context, ty: &Ty) -> Tokens {
                             ty: stringify!(#ty),
                             scope: #scope_lit,
                             attr: ident.as_ref(),
-                            err: Box::new(err),
+                            err: Box::new(err) as _,
                         });
                         continue;
                     }
@@ -212,6 +213,7 @@ fn match_literal(ctx: &Context, ty: &Ty, lit: Lit) -> Tokens {
         Lit::Float(_) => {
             quote! {
                 ::syn::Lit::Float(ref value, _) => {
+                    #[allow(unreachable_code)]
                     match <#ty as ::std::str::FromStr>::from_str(value.as_str()) {
                         Ok(value) => value,
                         Err(err) => {
@@ -220,7 +222,7 @@ fn match_literal(ctx: &Context, ty: &Ty, lit: Lit) -> Tokens {
                                 ty: stringify!(#ty),
                                 scope: #scope_lit,
                                 attr: ident.as_ref(),
-                                err: Box::new(err),
+                                err: Box::new(err) as _,
                             });
                             continue;
                         }
