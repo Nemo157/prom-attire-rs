@@ -1,6 +1,6 @@
 [package]
 name = "prom-attire"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Wim Looman <wim@nemo157.com>"]
 
 description = "Procedural Macro for Procedural Macros to parse attributes"
@@ -27,8 +27,8 @@ members = ["prom-attire-bootstrap", "prom-attire-impl"]
 [dependencies]
 error-chain = "0.8.1"
 syn = "0.11.4"
-prom-attire-bootstrap = { version = "=0.1.0", path = "prom-attire-bootstrap" }
-prom-attire-impl = { version = "=0.1.0", path = "prom-attire-impl" }
+prom-attire-bootstrap = { version = "=0.1.1", path = "prom-attire-bootstrap" }
+prom-attire-impl = { version = "=0.1.1", path = "prom-attire-impl" }
 
 [build-dependencies]
 rustc_version = "0.2.2"
