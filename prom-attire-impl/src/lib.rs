@@ -14,7 +14,7 @@ mod tmp;
 
 use std::str::FromStr;
 pub use errors::*;
-use tmp::TryInto;
+//use tmp::TryInto;
 
 pub struct Config<'a> {
     pub scope: Option<&'a str>,

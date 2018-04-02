@@ -7,7 +7,7 @@ use std::collections::hash_map::Entry;
 use syn;
 
 use errors::*;
-use tmp::{TryFrom, TryInto};
+//use tmp::{TryFrom, TryInto};
 use {Config, FieldConfig, Defaulted};
 
 #[derive(Debug)]
@@ -61,7 +61,7 @@ pub enum Lit {
 }
 
 impl<'a> TryFrom<(&'a syn::DeriveInput, &'a Config<'a>)> for Struct<'a> {
-    type Err = Error;
+    type Error = Error;
 
     fn try_from((ast, config): (&'a syn::DeriveInput, &'a Config<'a>))
         -> Result<Self> {
@@ -151,7 +151,7 @@ impl<'a> TryFrom<(&'a syn::DeriveInput, &'a Config<'a>)> for Struct<'a> {
 }
 
 impl<'a> TryFrom<(&'a syn::Field, FieldConfig<'a>)> for Field<'a> {
-    type Err = Error;
+    type Error = Error;
 
     fn try_from((ast, config): (&'a syn::Field, FieldConfig<'a>))
         -> Result<Self> {
@@ -190,7 +190,7 @@ impl<'a> TryFrom<(&'a syn::Field, FieldConfig<'a>)> for Field<'a> {
 }
 
 impl<'a> TryFrom<&'a syn::Ty> for Wrapper<'a> {
-    type Err = Error;
+    type Error = Error;
 
     fn try_from(ty: &'a syn::Ty) -> Result<Self> {
         if let syn::Ty::Path(None, ref path) = *ty {
@@ -242,7 +242,7 @@ fn ty_try_from_option_or_vec<'a>(
 }
 
 impl<'a> TryFrom<&'a syn::Ty> for Ty<'a> {
-    type Err = Error;
+    type Error = Error;
 
     fn try_from(ty: &'a syn::Ty) -> Result<Self> {
         Ok(match *ty {
