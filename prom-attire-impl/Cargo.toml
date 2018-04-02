@@ -4,11 +4,12 @@ version = "0.1.1"
 authors = ["Wim Looman <wim@nemo157.com>"]
 
 description = """
-Procedural Macro Implementation (prom-attire-impl) used by both a Procedural
-Macro Bootstrap (prom-attire-bootstrap) for a Procedural Macro (prom-attire) for
-Procedural Macros (yours!) to parse attributes (your users!) and a Procedural
-Macro (prom-attire) for Procedural Macros (yours!) to parse attributes (your
-users!)
+Procedural Macro Implementation (prom-attire-impl) used by both: a Procedural
+Macro Bootstrap (prom-attire-bootstrap) for a Procedural Macro
+(prom-attire-derive) for a Procedural Macro Runtime (prom-attire) for Procedural
+Macros (yours!) to parse attributes (your users!); and a Procedural Macro
+(prom-attire-derive) for a Procedural Macro Runtime (prom-attire) for Procedural
+Macros (yours!) to parse attributes (your users!)
 
 This is an internal dependency of prom-attire, you should not need to depend on
 it directly.
