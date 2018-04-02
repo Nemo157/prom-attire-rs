@@ -28,12 +28,9 @@ script:
 deploy:
   provider: script
   script: |
-    cd ./prom-attire-impl
-      cargo publish --token "$CRATES_IO_TOKEN"
-    cd ../prom-attire-bootstrap
-      cargo publish --token "$CRATES_IO_TOKEN"
-    cd ..
-    cargo publish --token "$CRATES_IO_TOKEN"
+    cargo publish --manifest-path prom-attire-impl/Cargo.toml --token "$CRATES_IO_TOKEN";
+    cargo publish --manifest-path prom-attire-bootstrap/Cargo.toml --token "$CRATES_IO_TOKEN";
+    cargo publish --token "$CRATES_IO_TOKEN";
   skip_cleanup: true
   on:
     tags: true
